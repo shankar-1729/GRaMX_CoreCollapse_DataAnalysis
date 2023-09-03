@@ -42,7 +42,7 @@ display_physical_time = True
 if display_physical_time:
     time_factor = 203.0
     offset = 71928/203.0
-    plt.xlim(-0.4, 60)
+    plt.xlim(-0.4, 100)
 else:
     time_factor = 1.0 
     offset = 0.0
@@ -50,10 +50,12 @@ else:
 #------------------------------------------------------------------------------ 
 
 plt.title("{}".format(var_name))
-plt.ylim(0.0004, 0.0006)
+plt.ylim(0.0004, 0.00063)
 
 rho_noLeak_central_code = 0.0005276
+rho_Leak_peak_code = 0.000607
 plt.axhline(y = rho_noLeak_central_code, color = 'black', linestyle = '--')
+plt.axhline(y = rho_Leak_peak_code, color = 'black', linestyle = '--')
 
 ring_marker_size = 40
 dot_marker_size = 20

@@ -34,7 +34,8 @@ latest_copied_output = 0
 if(len(out_list) > 0):
     latest_copied_output = max(out_list)
 #------------------------------------------------------------------------------   
-plt.clf()
+#plt.clf()
+plt.figure(figsize=(12,8))
 
 #TODO: Following parameters control plot characteristics
 #------------------------------------------------------------------------------
@@ -53,7 +54,7 @@ plot_max_shock = False
 if display_physical_time:
     time_factor = 203.0
     offset = 71928/203.0
-    plt.xlim(-0.4, 60)
+    plt.xlim(-0.4, 100)
 else:
     time_factor = 1.0 
     offset = 0.0
@@ -89,7 +90,8 @@ for output_number in range(0, latest_copied_output+1):
 
 plt.grid()
 plt.xlabel("time [ms]")
-plt.ylabel("radius [km]")    
+plt.ylabel("radius [km]") 
+plt.savefig("shock_radius.png")   
 plt.show()
 
 

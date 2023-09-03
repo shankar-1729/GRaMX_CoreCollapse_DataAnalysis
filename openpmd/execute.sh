@@ -8,3 +8,4 @@ echo -e "${GREEN}Running plot.py on MMAAMS..${NC}"
 ssh sshanka@u035042.science.uva.nl < commands.txt
 echo " "
 echo -e "${GREEN}Copying png files to local machine..${NC}"
+scp sshanka@u035042.science.uva.nl:/home/sshanka/CCSN_12000km_analysis/*.png /home/swapnnil/Desktop/000_carpetX/NERSC_GPU_Hackathon/Balsara_files/test-GRHydroX-GPU-1/CCSN_12000km_analysis/openpmd/MMAAMS/

@@ -39,7 +39,7 @@ display_physical_time = True
 if display_physical_time:
     time_factor = 203.0
     offset = 71928/203.0
-    plt.xlim(-0.4, 60)
+    plt.xlim(-0.4, 100)
 else:
     time_factor = 1.0 
     offset = 0.0
