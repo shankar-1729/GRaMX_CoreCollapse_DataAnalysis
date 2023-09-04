@@ -19,6 +19,8 @@ gf = "hydrobase_temperature"
 norm = "linear"
 #norm = "log_abs"
 
+x_slice = -100
+
 vmin_set = None
 vmax_set = None
 #vmin_set = 1.0
@@ -109,6 +111,18 @@ size_z = level_max_idx_z - level_min_idx_z + 1
 size_y = level_max_idx_y - level_min_idx_y + 1
 size_x = level_max_idx_x - level_min_idx_x + 1
 print("size: z = {}, y = {}, x = {}".format(size_z, size_y, size_x))
+
+dz = round(variable_mesh.grid_spacing[0])
+dy = round(variable_mesh.grid_spacing[1])
+dx = round(variable_mesh.grid_spacing[2])
+z0 = -dz*(level_max_idx_z-level_min_idx_z+1)//2    
+y0 = -dy*(level_max_idx_y-level_min_idx_y+1)//2   
+x0 = -dx*(level_max_idx_x-level_min_idx_x+1)//2   
+print("dz = {}, dy = {}, dx = {}, z0 = {}, y0 = {}, x0 = {}".format(dz, dy, dx, z0, y0, x0))
+
+xv = np.linspace(x0, (size_x-1)*dx+x0, size_x)
+x_slice_index = np.where(abs(xv-x_slice)<=dx)[0][0]
+print("x_slice = {}, x_slice_index = {}".format(x_slice, x_slice_index))
 #-------------------------------------------------------------------------
 
 #After registering a data chunk such as variable_slice_yz for loading, it MUST NOT be modified or deleted until the flush() step is performed! You must not yet access variable_slice_yz!  
@@ -143,14 +157,6 @@ for chunk in variable.available_chunks():
             variable_2d_yz[idx0_z + k, idx0_y + j] = variable_slice_yz[chunk.offset[0] + k, chunk.offset[1] + j]
 
 #print(variable_2d_yz[32, 32])
-
-
-
-dz = round(variable_mesh.grid_spacing[0])
-dy = round(variable_mesh.grid_spacing[1])
-z0 = -dz*(level_max_idx_z-level_min_idx_z+1)//2    
-y0 = -dy*(level_max_idx_y-level_min_idx_y+1)//2   
-print("dz = {}, dy = {}, z0 = {}, y0 = {}".format(dz, dy, z0, y0))
 
 
 #Prepare for plotting in yz-plane
