@@ -1,0 +1,25 @@
+cd /gpfs/alpine/ast154/scratch/sshanka/carpetx_github/openpmd
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/sw/andes/python/3.7/anaconda-base/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/sw/andes/python/3.7/anaconda-base/etc/profile.d/conda.sh" ]; then
+        . "/sw/andes/python/3.7/anaconda-base/etc/profile.d/conda.sh"
+    else
+        export PATH="/sw/andes/python/3.7/anaconda-base/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+
+
+conda activate openpmd
+mv slurm*.out slurm_files/
+sbatch run.sh
+echo "sleeping for 5 seconds"
+sleep 5s
+cat slurm*.out   
+
