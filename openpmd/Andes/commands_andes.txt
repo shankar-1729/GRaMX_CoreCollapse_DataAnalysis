@@ -19,7 +19,7 @@ unset __conda_setup
 conda activate openpmd
 mv slurm*.out slurm_files/
 sbatch run.sh
-echo "sleeping for 15 seconds"
-sleep 15s
+echo "Sleeping for 20 seconds..."
+sleep 20s
 cat slurm*.out   
 
