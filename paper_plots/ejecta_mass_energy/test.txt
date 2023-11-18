@@ -1,0 +1,2 @@
+#o/p  it       t_pb[ms]       level        ejecta_mass[M]      ejecta_KE[erg]     ejecta_IE[erg]     ejecta_ME[erg]     ejecta_TE[erg]
+60  220000  94.24630542416357  6     0.0025203809295563325     1.392945154421635e+49     1.7216297589018525e+49     5.553766856694877e+49     8.668341770018364e+49

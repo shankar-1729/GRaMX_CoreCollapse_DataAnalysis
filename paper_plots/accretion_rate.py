@@ -221,8 +221,6 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
     gyz_3d_ccc = np.zeros((gyz_3d.shape[0]-1, gyz_3d.shape[1]-1, gyz_3d.shape[2]-1))
     gzz_3d_ccc = np.zeros((gzz_3d.shape[0]-1, gzz_3d.shape[1]-1, gzz_3d.shape[2]-1))
     
-    rad_cutoff = np.zeros((gzz_3d.shape[0]-1, gzz_3d.shape[1]-1, gzz_3d.shape[2]-1))
-    
     '''
     #This loops takes the majority of processing time
     for i in range(gxx_3d.shape[0]-1):
@@ -254,99 +252,14 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
                                        gzz_3d[i+1, j, k+1] + gzz_3d[i+1, j+1, k+1])
     '''
     
-    #-------------------------------------------------------------------------------------
-    #calculation of 1D density profiles to calculate radius cutoff for NS mass calculation
-    #-------------------------------------------------------------------------------------
-    size_x = rho_3d.shape[2]
-    size_y = rho_3d.shape[1]
-    size_z = rho_3d.shape[0]
-    
-    xv = np.linspace(x0, (size_x-1)*dx+x0, size_x)
-    x_slice = 0.0
-    x_slice_index = np.where(abs(xv-x_slice)<=dx)[0][0]
-    
-    yv = np.linspace(y0, (size_y-1)*dy+y0, size_y)
-    y_slice = 0.0
-    y_slice_index = np.where(abs(yv-y_slice)<=dy)[0][0]
-    
-    zv = np.linspace(z0, (size_z-1)*dz+z0, size_z)
-    z_slice = 0.0
-    z_slice_index = np.where(abs(zv-z_slice)<=dz)[0][0] 
-    
-    #This gives rho_1d profiles in physical units
-    rho_1d_x = rho_3d[z_slice_index, y_slice_index, :]/1.61930347e-18
-    rho_1d_y = rho_3d[z_slice_index, :, x_slice_index]/1.61930347e-18
-    rho_1d_z = rho_3d[:, y_slice_index, x_slice_index]/1.61930347e-18
-    
-    #print("rho_1d_x: {}".format(rho_1d_x), flush=True)
-    #print("rho_1d_y: {}".format(rho_1d_y), flush=True)
-    #print("rho_1d_z: {}".format(rho_1d_z), flush=True)
-    
-    rho_cutoff = 1e11
-    #-----------------------------------------------------
-    #calculation of x-radius cutoff
-    #-----------------------------------------------------
-    idx_x_minus = np.where(rho_1d_x > rho_cutoff)[0][0]
-    idx_x_plus = np.where(rho_1d_x > rho_cutoff)[0][-1]
-    rad_x_minus = x0 + dx*idx_x_minus
-    rad_x_plus = x0 + dx*idx_x_plus
-    #print( idx_x_minus, abs(rad_x_minus-dx), "{:.4E}".format(rho_1d_x[idx_x_minus-1]), abs(rad_x_minus), "{:.4E}".format(rho_1d_x[idx_x_minus]) )
-    #print( idx_x_plus, rad_x_plus, "{:.4E}".format(rho_1d_x[idx_x_plus]), rad_x_plus+dx, "{:.4E}".format(rho_1d_x[idx_x_plus+1]) )
-    
-    #interpolation to determine r where rho=1e11 g/cm^3
-    rad_x_minus_final = (rad_x_minus-dx) + dx*(rho_cutoff-rho_1d_x[idx_x_minus-1])/(rho_1d_x[idx_x_minus]-rho_1d_x[idx_x_minus-1])
-    rad_x_minus_final = abs(rad_x_minus_final)
-    rad_x_plus_final = rad_x_plus + dx*(rho_cutoff-rho_1d_x[idx_x_plus])/(rho_1d_x[idx_x_plus+1]-rho_1d_x[idx_x_plus]) 
-    #print("rad_x_minus_final = {}, rad_x_plus_final = {}".format(rad_x_minus_final, rad_x_plus_final))
-    rad_x = (rad_x_minus_final + rad_x_plus_final)/2.0
-    
-    
-    #-----------------------------------------------------
-    #calculation of y-radius cutoff
-    #-----------------------------------------------------
-    idx_y_minus = np.where(rho_1d_y > rho_cutoff)[0][0]
-    idx_y_plus = np.where(rho_1d_y > rho_cutoff)[0][-1]
-    rad_y_minus = y0 + dy*idx_y_minus
-    rad_y_plus = y0 + dy*idx_y_plus
-    #print( idx_y_minus, abs(rad_y_minus-dy), "{:.4E}".format(rho_1d_y[idx_y_minus-1]), abs(rad_y_minus), "{:.4E}".format(rho_1d_y[idx_y_minus]) )
-    #print( idx_y_plus, rad_y_plus, "{:.4E}".format(rho_1d_y[idx_y_plus]), rad_y_plus+dy, "{:.4E}".format(rho_1d_y[idx_y_plus+1]) )
-    
-    #interpolation to determine r where rho=1e11 g/cm^3
-    rad_y_minus_final = (rad_y_minus-dy) + dy*(rho_cutoff-rho_1d_y[idx_y_minus-1])/(rho_1d_y[idx_y_minus]-rho_1d_y[idx_y_minus-1])
-    rad_y_minus_final = abs(rad_y_minus_final)
-    rad_y_plus_final = rad_y_plus + dy*(rho_cutoff-rho_1d_y[idx_y_plus])/(rho_1d_y[idx_y_plus+1]-rho_1d_y[idx_y_plus]) 
-    #print("rad_y_minus_final = {}, rad_y_plus_final = {}".format(rad_y_minus_final, rad_y_plus_final))
-    rad_y = (rad_y_minus_final + rad_y_plus_final)/2.0
-    
-    #-----------------------------------------------------
-    #calculation of z-radius cutoff
-    #-----------------------------------------------------
-    idx_z_minus = np.where(rho_1d_z > rho_cutoff)[0][0]
-    idx_z_plus = np.where(rho_1d_z > rho_cutoff)[0][-1]
-    rad_z_minus = z0 + dz*idx_z_minus
-    rad_z_plus = z0 + dz*idx_z_plus
-    #print( idx_z_minus, abs(rad_z_minus-dz), "{:.4E}".format(rho_1d_z[idx_z_minus-1]), abs(rad_z_minus), "{:.4E}".format(rho_1d_z[idx_z_minus]) )
-    #print( idx_z_plus, rad_z_plus, "{:.4E}".format(rho_1d_z[idx_z_plus]), rad_z_plus+dz, "{:.4E}".format(rho_1d_z[idx_z_plus+1]) )
-    
-    #interpolation to determine r where rho=1e11 g/cm^3
-    rad_z_minus_final = (rad_z_minus-dz) + dz*(rho_cutoff-rho_1d_z[idx_z_minus-1])/(rho_1d_z[idx_z_minus]-rho_1d_z[idx_z_minus-1])
-    rad_z_minus_final = abs(rad_z_minus_final)
-    rad_z_plus_final = rad_z_plus + dz*(rho_cutoff-rho_1d_z[idx_z_plus])/(rho_1d_z[idx_z_plus+1]-rho_1d_z[idx_z_plus]) 
-    #print("rad_z_minus_final = {}, rad_z_plus_final = {}".format(rad_z_minus_final, rad_z_plus_final))
-    rad_z = (rad_z_minus_final + rad_z_plus_final)/2.0
-
-    #------------------------------------------------------------------------------------------
-    #------------------------------------------------------------------------------------------
-    print("rad_x = {}".format(rad_x))
-    print("rad_y = {}".format(rad_y))
-    print("rad_z = {}".format(rad_z))
-    
-    mass_within_radius_M = (rad_x+rad_y+rad_z)/3.0
-    mass_within_radius_km = mass_within_radius_M*1.477    
-    
-    #mass_within_radius_km = 50.0
-    #mass_within_radius_M = mass_within_radius_km/1.477
-    print("Calculating total mass within radius = {} km = {} M".format(mass_within_radius_km, mass_within_radius_M))
+    rad_cutoff_50km = np.zeros((gzz_3d.shape[0]-1, gzz_3d.shape[1]-1, gzz_3d.shape[2]-1)) 
+    rad_cutoff_70km = np.zeros((gzz_3d.shape[0]-1, gzz_3d.shape[1]-1, gzz_3d.shape[2]-1))  
+    rad_cutoff_90km = np.zeros((gzz_3d.shape[0]-1, gzz_3d.shape[1]-1, gzz_3d.shape[2]-1))      
+   
+    mass_within_50km_M = 50.0/1.477
+    mass_within_70km_M = 70.0/1.477
+    mass_within_90km_M = 90.0/1.477
+    #print("Calculating total mass within radius = 50.0 km = {} M".format(mass_within_50km_M))
     
     #Don't average for now (until I figure out parallelization)
     print("Started metric calculation...", flush=True)
@@ -357,9 +270,12 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
           yy = j*dy+y0
           zz = i*dz+z0
           rad = np.sqrt(xx*xx + yy*yy + zz*zz)
-          #TODO: Radius within which we calculate total mass
-          if rad <= mass_within_radius_M: 
-            rad_cutoff[i, j, k] = 1.0 
+          if rad <= mass_within_50km_M: 
+            rad_cutoff_50km[i, j, k] = 1.0
+          if rad <= mass_within_70km_M: 
+            rad_cutoff_70km[i, j, k] = 1.0 
+          if rad <= mass_within_90km_M: 
+            rad_cutoff_90km[i, j, k] = 1.0  
           
           gxx_3d_ccc[i, j, k] = gxx_3d[i, j, k]                                      
           gxy_3d_ccc[i, j, k] = gxy_3d[i, j, k]                                      
@@ -385,9 +301,11 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
     
     sdetg = np.sqrt(sdetg)
    
-    dens = sdetg*w*rho_3d*rad_cutoff
+    dens_50km = sdetg*w*rho_3d*rad_cutoff_50km
+    dens_70km = sdetg*w*rho_3d*rad_cutoff_70km
+    dens_90km = sdetg*w*rho_3d*rad_cutoff_90km
     
-    return selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, dens, mass_within_radius_km
+    return selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, dens_50km, dens_70km, dens_90km
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////        
 
 from timeit import default_timer as timer        
@@ -401,14 +319,16 @@ Ref6_40: output-0000 to output-0055 (except output-0043)
 '''
 #------------------------------------------------------------------               
 
-#sim_name = "CCSN_12000km"   
-sim_name = "Ref6_40"
-#f = open("PNS_mass/PNS_mass_{}.txt".format(sim_name), "w", buffering=1) #means flush output after every line
-f = open("PNS_mass/test.txt".format(sim_name), "w", buffering=1) #TODO 
-f.write("#o/p  it       t_pb[ms]       level        PNS_mass[M]        PNS_radius[km]\n")
+sim_name = "CCSN_12000km"   #TODO
+#sim_name = "Ref6_40"       #TODO
+
+#"buffering=1" means flush output after every line
+f = open("accretion_rate/accretion_rate_{}.txt".format(sim_name), "w", buffering=1) 
+#f = open("accretion_rate/test.txt".format(sim_name), "w", buffering=1) 
+f.write("#o/p  it       t_pb[ms]       level        mass_50km[M]        mass_70km[M]    mass_90km[M]\n") 
 
 
-for output_number in range(0, 56):      
+for output_number in range(0, 107): #TODO     
     parfile_name = "CCSN_12000km"
     verbose = False
     
@@ -429,13 +349,23 @@ for output_number in range(0, 56):
         
         #----------------------------------------------------------------------------
         start = timer()
-        level = 5  #which refinement level to load
-        selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, dens, mass_within_radius_km = \
+        
+        level = -1
+        if sim_name == "Ref6_40":
+            level = 5
+        if sim_name == "CCSN_12000km":
+            level = 6    
+        
+        selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, dens_50km, dens_70km, dens_90km = \
             get_derived_vars_3d(data_dir, input_iteration, level, verbose)
         
-        PNS_mass = dx*dy*dz*np.sum(dens)  
-        PNS_radius = mass_within_radius_km
-        print("At level {}: PNS mass = {} M_sun, PNS radius = {} km".format(level, PNS_mass, mass_within_radius_km));
+        mass_50km = dx*dy*dz*np.sum(dens_50km) 
+        mass_70km = dx*dy*dz*np.sum(dens_70km)  
+        mass_90km = dx*dy*dz*np.sum(dens_90km)   
+        
+        print("At level {}: mass enclosed within 50 km = {} M_sun".format(level, mass_50km));
+        print("At level {}: mass enclosed within 70 km = {} M_sun".format(level, mass_70km));
+        print("At level {}: mass enclosed within 90 km = {} M_sun".format(level, mass_90km));
         
         end = timer()
         time_elapsed = end - start
@@ -445,7 +375,7 @@ for output_number in range(0, 56):
         print("---------------------------------------------------------------\n")
         sys.stdout.flush()
         
-        f.write("{}  {}  {}  {}     {}  {}\n".format(output_number, input_iteration, time, level, PNS_mass, PNS_radius))
+        f.write("{}  {}  {}  {}     {}    {}    {}\n".format(output_number, input_iteration, time, level, mass_50km, mass_70km, mass_90km))  
         #----------------------------------------------------------------------------
 
 f.close()        

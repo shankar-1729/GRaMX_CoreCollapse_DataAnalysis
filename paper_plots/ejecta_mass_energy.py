@@ -191,13 +191,24 @@ def get_3d_data(group, gf, data_dir, input_iteration, level, verbose):
 def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
     selected_iteration, time, x0, y0, z0, dx, dy, dz, rho_3d = \
             get_3d_data("hydrobase_rho", "hydrobase_rho", data_dir, input_iteration, level, verbose)
-                    
+    selected_iteration, time, x0, y0, z0, dx, dy, dz, press_3d = \
+            get_3d_data("hydrobase_press", "hydrobase_press", data_dir, input_iteration, level, verbose)
+    selected_iteration, time, x0, y0, z0, dx, dy, dz, eps_3d = \
+            get_3d_data("hydrobase_eps", "hydrobase_eps", data_dir, input_iteration, level, verbose)
+                            
     selected_iteration, time, x0, y0, z0, dx, dy, dz, velx_3d = \
             get_3d_data("hydrobase_vel", "hydrobase_velx", data_dir, input_iteration, level, verbose)
     selected_iteration, time, x0, y0, z0, dx, dy, dz, vely_3d = \
             get_3d_data("hydrobase_vel", "hydrobase_vely", data_dir, input_iteration, level, verbose)
     selected_iteration, time, x0, y0, z0, dx, dy, dz, velz_3d = \
             get_3d_data("hydrobase_vel", "hydrobase_velz", data_dir, input_iteration, level, verbose)        
+    
+    selected_iteration, time, x0, y0, z0, dx, dy, dz, bvecx_3d = \
+            get_3d_data("hydrobase_bvec", "hydrobase_bvecx", data_dir, input_iteration, level, verbose)
+    selected_iteration, time, x0, y0, z0, dx, dy, dz, bvecy_3d = \
+            get_3d_data("hydrobase_bvec", "hydrobase_bvecy", data_dir, input_iteration, level, verbose)
+    selected_iteration, time, x0, y0, z0, dx, dy, dz, bvecz_3d = \
+            get_3d_data("hydrobase_bvec", "hydrobase_bvecz", data_dir, input_iteration, level, verbose)
     
     selected_iteration, time, x0, y0, z0, dx, dy, dz, gxx_3d = \
             get_3d_data("admbase_metric", "admbase_gxx", data_dir, input_iteration, level, verbose)
@@ -211,7 +222,15 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
             get_3d_data("admbase_metric", "admbase_gyz", data_dir, input_iteration, level, verbose)        
     selected_iteration, time, x0, y0, z0, dx, dy, dz, gzz_3d = \
             get_3d_data("admbase_metric", "admbase_gzz", data_dir, input_iteration, level, verbose) 
-                   
+    
+    selected_iteration, time, x0, y0, z0, dx, dy, dz, alp_3d = \
+            get_3d_data("admbase_lapse", "admbase_alp", data_dir, input_iteration, level, verbose)                
+    selected_iteration, time, x0, y0, z0, dx, dy, dz, betax_3d = \
+            get_3d_data("admbase_shift", "admbase_betax", data_dir, input_iteration, level, verbose)          
+    selected_iteration, time, x0, y0, z0, dx, dy, dz, betay_3d = \
+            get_3d_data("admbase_shift", "admbase_betay", data_dir, input_iteration, level, verbose)
+    selected_iteration, time, x0, y0, z0, dx, dy, dz, betaz_3d = \
+            get_3d_data("admbase_shift", "admbase_betaz", data_dir, input_iteration, level, verbose)               
     #-------------------------------------------------------------------------------------------------
     #Average the 3d vertex-centered data to cell-centers 
     gxx_3d_ccc = np.zeros((gxx_3d.shape[0]-1, gxx_3d.shape[1]-1, gxx_3d.shape[2]-1))
@@ -221,7 +240,10 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
     gyz_3d_ccc = np.zeros((gyz_3d.shape[0]-1, gyz_3d.shape[1]-1, gyz_3d.shape[2]-1))
     gzz_3d_ccc = np.zeros((gzz_3d.shape[0]-1, gzz_3d.shape[1]-1, gzz_3d.shape[2]-1))
     
-    rad_cutoff = np.zeros((gzz_3d.shape[0]-1, gzz_3d.shape[1]-1, gzz_3d.shape[2]-1))
+    alp_3d_ccc = np.zeros((gxx_3d.shape[0]-1, gxx_3d.shape[1]-1, gxx_3d.shape[2]-1))
+    betax_3d_ccc = np.zeros((gxx_3d.shape[0]-1, gxx_3d.shape[1]-1, gxx_3d.shape[2]-1))
+    betay_3d_ccc = np.zeros((gxx_3d.shape[0]-1, gxx_3d.shape[1]-1, gxx_3d.shape[2]-1))
+    betaz_3d_ccc = np.zeros((gxx_3d.shape[0]-1, gxx_3d.shape[1]-1, gxx_3d.shape[2]-1))
     
     '''
     #This loops takes the majority of processing time
@@ -254,125 +276,49 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
                                        gzz_3d[i+1, j, k+1] + gzz_3d[i+1, j+1, k+1])
     '''
     
-    #-------------------------------------------------------------------------------------
-    #calculation of 1D density profiles to calculate radius cutoff for NS mass calculation
-    #-------------------------------------------------------------------------------------
-    size_x = rho_3d.shape[2]
-    size_y = rho_3d.shape[1]
-    size_z = rho_3d.shape[0]
-    
-    xv = np.linspace(x0, (size_x-1)*dx+x0, size_x)
-    x_slice = 0.0
-    x_slice_index = np.where(abs(xv-x_slice)<=dx)[0][0]
-    
-    yv = np.linspace(y0, (size_y-1)*dy+y0, size_y)
-    y_slice = 0.0
-    y_slice_index = np.where(abs(yv-y_slice)<=dy)[0][0]
-    
-    zv = np.linspace(z0, (size_z-1)*dz+z0, size_z)
-    z_slice = 0.0
-    z_slice_index = np.where(abs(zv-z_slice)<=dz)[0][0] 
-    
-    #This gives rho_1d profiles in physical units
-    rho_1d_x = rho_3d[z_slice_index, y_slice_index, :]/1.61930347e-18
-    rho_1d_y = rho_3d[z_slice_index, :, x_slice_index]/1.61930347e-18
-    rho_1d_z = rho_3d[:, y_slice_index, x_slice_index]/1.61930347e-18
-    
-    #print("rho_1d_x: {}".format(rho_1d_x), flush=True)
-    #print("rho_1d_y: {}".format(rho_1d_y), flush=True)
-    #print("rho_1d_z: {}".format(rho_1d_z), flush=True)
-    
-    rho_cutoff = 1e11
-    #-----------------------------------------------------
-    #calculation of x-radius cutoff
-    #-----------------------------------------------------
-    idx_x_minus = np.where(rho_1d_x > rho_cutoff)[0][0]
-    idx_x_plus = np.where(rho_1d_x > rho_cutoff)[0][-1]
-    rad_x_minus = x0 + dx*idx_x_minus
-    rad_x_plus = x0 + dx*idx_x_plus
-    #print( idx_x_minus, abs(rad_x_minus-dx), "{:.4E}".format(rho_1d_x[idx_x_minus-1]), abs(rad_x_minus), "{:.4E}".format(rho_1d_x[idx_x_minus]) )
-    #print( idx_x_plus, rad_x_plus, "{:.4E}".format(rho_1d_x[idx_x_plus]), rad_x_plus+dx, "{:.4E}".format(rho_1d_x[idx_x_plus+1]) )
-    
-    #interpolation to determine r where rho=1e11 g/cm^3
-    rad_x_minus_final = (rad_x_minus-dx) + dx*(rho_cutoff-rho_1d_x[idx_x_minus-1])/(rho_1d_x[idx_x_minus]-rho_1d_x[idx_x_minus-1])
-    rad_x_minus_final = abs(rad_x_minus_final)
-    rad_x_plus_final = rad_x_plus + dx*(rho_cutoff-rho_1d_x[idx_x_plus])/(rho_1d_x[idx_x_plus+1]-rho_1d_x[idx_x_plus]) 
-    #print("rad_x_minus_final = {}, rad_x_plus_final = {}".format(rad_x_minus_final, rad_x_plus_final))
-    rad_x = (rad_x_minus_final + rad_x_plus_final)/2.0
-    
-    
-    #-----------------------------------------------------
-    #calculation of y-radius cutoff
-    #-----------------------------------------------------
-    idx_y_minus = np.where(rho_1d_y > rho_cutoff)[0][0]
-    idx_y_plus = np.where(rho_1d_y > rho_cutoff)[0][-1]
-    rad_y_minus = y0 + dy*idx_y_minus
-    rad_y_plus = y0 + dy*idx_y_plus
-    #print( idx_y_minus, abs(rad_y_minus-dy), "{:.4E}".format(rho_1d_y[idx_y_minus-1]), abs(rad_y_minus), "{:.4E}".format(rho_1d_y[idx_y_minus]) )
-    #print( idx_y_plus, rad_y_plus, "{:.4E}".format(rho_1d_y[idx_y_plus]), rad_y_plus+dy, "{:.4E}".format(rho_1d_y[idx_y_plus+1]) )
-    
-    #interpolation to determine r where rho=1e11 g/cm^3
-    rad_y_minus_final = (rad_y_minus-dy) + dy*(rho_cutoff-rho_1d_y[idx_y_minus-1])/(rho_1d_y[idx_y_minus]-rho_1d_y[idx_y_minus-1])
-    rad_y_minus_final = abs(rad_y_minus_final)
-    rad_y_plus_final = rad_y_plus + dy*(rho_cutoff-rho_1d_y[idx_y_plus])/(rho_1d_y[idx_y_plus+1]-rho_1d_y[idx_y_plus]) 
-    #print("rad_y_minus_final = {}, rad_y_plus_final = {}".format(rad_y_minus_final, rad_y_plus_final))
-    rad_y = (rad_y_minus_final + rad_y_plus_final)/2.0
-    
-    #-----------------------------------------------------
-    #calculation of z-radius cutoff
-    #-----------------------------------------------------
-    idx_z_minus = np.where(rho_1d_z > rho_cutoff)[0][0]
-    idx_z_plus = np.where(rho_1d_z > rho_cutoff)[0][-1]
-    rad_z_minus = z0 + dz*idx_z_minus
-    rad_z_plus = z0 + dz*idx_z_plus
-    #print( idx_z_minus, abs(rad_z_minus-dz), "{:.4E}".format(rho_1d_z[idx_z_minus-1]), abs(rad_z_minus), "{:.4E}".format(rho_1d_z[idx_z_minus]) )
-    #print( idx_z_plus, rad_z_plus, "{:.4E}".format(rho_1d_z[idx_z_plus]), rad_z_plus+dz, "{:.4E}".format(rho_1d_z[idx_z_plus+1]) )
-    
-    #interpolation to determine r where rho=1e11 g/cm^3
-    rad_z_minus_final = (rad_z_minus-dz) + dz*(rho_cutoff-rho_1d_z[idx_z_minus-1])/(rho_1d_z[idx_z_minus]-rho_1d_z[idx_z_minus-1])
-    rad_z_minus_final = abs(rad_z_minus_final)
-    rad_z_plus_final = rad_z_plus + dz*(rho_cutoff-rho_1d_z[idx_z_plus])/(rho_1d_z[idx_z_plus+1]-rho_1d_z[idx_z_plus]) 
-    #print("rad_z_minus_final = {}, rad_z_plus_final = {}".format(rad_z_minus_final, rad_z_plus_final))
-    rad_z = (rad_z_minus_final + rad_z_plus_final)/2.0
-
-    #------------------------------------------------------------------------------------------
-    #------------------------------------------------------------------------------------------
-    print("rad_x = {}".format(rad_x))
-    print("rad_y = {}".format(rad_y))
-    print("rad_z = {}".format(rad_z))
-    
-    mass_within_radius_M = (rad_x+rad_y+rad_z)/3.0
-    mass_within_radius_km = mass_within_radius_M*1.477    
-    
-    #mass_within_radius_km = 50.0
-    #mass_within_radius_M = mass_within_radius_km/1.477
-    print("Calculating total mass within radius = {} km = {} M".format(mass_within_radius_km, mass_within_radius_M))
-    
     #Don't average for now (until I figure out parallelization)
-    print("Started metric calculation...", flush=True)
+    '''
     for i in range(gxx_3d.shape[0]-1): #z
       for j in range(gxx_3d.shape[1]-1): #y
         for k in range(gxx_3d.shape[2]-1): #x
-          xx = k*dx+x0 #TODO TODO: Recheck the coordinate calculation again
-          yy = j*dy+y0
-          zz = i*dz+z0
-          rad = np.sqrt(xx*xx + yy*yy + zz*zz)
-          #TODO: Radius within which we calculate total mass
-          if rad <= mass_within_radius_M: 
-            rad_cutoff[i, j, k] = 1.0 
-          
           gxx_3d_ccc[i, j, k] = gxx_3d[i, j, k]                                      
           gxy_3d_ccc[i, j, k] = gxy_3d[i, j, k]                                      
           gxz_3d_ccc[i, j, k] = gxz_3d[i, j, k]                                     
           gyy_3d_ccc[i, j, k] = gyy_3d[i, j, k] 
           gyz_3d_ccc[i, j, k] = gyz_3d[i, j, k] 
           gzz_3d_ccc[i, j, k] = gzz_3d[i, j, k]
-              
+          alp_3d_ccc[i, j, k] = alp_3d[i, j, k]
+          betax_3d_ccc[i, j, k] = betax_3d[i, j, k]
+          betay_3d_ccc[i, j, k] = betay_3d[i, j, k]
+          betaz_3d_ccc[i, j, k] = betaz_3d[i, j, k] 
+    '''          
+    
+    print("Started metric calculation...", flush=True)
+    #strip the last element of metric to make its shape same as hydro variables
+    #We use vectorized processing rather than using for loop: speedup is tremendous
+    gxx_3d_ccc = gxx_3d[:-1, :-1, :-1].copy()                                  
+    gxy_3d_ccc = gxy_3d[:-1, :-1, :-1].copy()                                    
+    gxz_3d_ccc = gxz_3d[:-1, :-1, :-1].copy()                                 
+    gyy_3d_ccc = gyy_3d[:-1, :-1, :-1].copy() 
+    gyz_3d_ccc = gyz_3d[:-1, :-1, :-1].copy() 
+    gzz_3d_ccc = gzz_3d[:-1, :-1, :-1].copy()
+    alp_3d_ccc = alp_3d[:-1, :-1, :-1].copy()
+    betax_3d_ccc = betax_3d[:-1, :-1, :-1].copy()
+    betay_3d_ccc = betay_3d[:-1, :-1, :-1].copy()
+    betaz_3d_ccc = betaz_3d[:-1, :-1, :-1].copy()
+    
+    del gxx_3d, gxy_3d, gxz_3d, gyy_3d, gyz_3d, gzz_3d, alp_3d, betax_3d, betay_3d, betaz_3d      
     #-------------------------------------------------------------------------------------------------
+    
+    print("Started Bernoulli calculation...", flush=True)
     #Calculate variables
     velxlow = gxx_3d_ccc * velx_3d + gxy_3d_ccc * vely_3d + gxz_3d_ccc * velz_3d;
     velylow = gxy_3d_ccc * velx_3d + gyy_3d_ccc * vely_3d + gyz_3d_ccc * velz_3d;
     velzlow = gxz_3d_ccc * velx_3d + gyz_3d_ccc * vely_3d + gzz_3d_ccc * velz_3d;
+    
+    bvecxlow = gxx_3d_ccc * bvecx_3d + gxy_3d_ccc * bvecy_3d + gxz_3d_ccc * bvecz_3d;
+    bvecylow = gxy_3d_ccc * bvecx_3d + gyy_3d_ccc * bvecy_3d + gyz_3d_ccc * bvecz_3d;
+    bveczlow = gxz_3d_ccc * bvecx_3d + gyz_3d_ccc * bvecy_3d + gzz_3d_ccc * bvecz_3d;
      
     v2 = velxlow * velx_3d + velylow * vely_3d + velzlow * velz_3d;
     w = 1.0 / np.sqrt(1.0 - v2);
@@ -384,10 +330,44 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
             gxx_3d_ccc * gyy_3d_ccc * gzz_3d_ccc 
     
     sdetg = np.sqrt(sdetg)
-   
-    dens = sdetg*w*rho_3d*rad_cutoff
     
-    return selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, dens, mass_within_radius_km
+    del gxx_3d_ccc, gxy_3d_ccc, gxz_3d_ccc, gyy_3d_ccc, gyz_3d_ccc, gzz_3d_ccc
+    del velx_3d, vely_3d, velz_3d 
+        
+    #Calculation of Bernoulli criterion    
+    Bdotv = velxlow * bvecx_3d + velylow * bvecy_3d + velzlow * bvecz_3d;
+    b2 = (bvecx_3d * bvecxlow + bvecy_3d * bvecylow + bvecz_3d * bveczlow) / (w*w) + Bdotv*Bdotv;
+    
+    ut = w*(velxlow*betax_3d_ccc + velylow*betay_3d_ccc + velzlow*betaz_3d_ccc - alp_3d_ccc) 
+    bernoulli = - (1.0 + eps_3d + (press_3d + b2) / rho_3d) * ut   #bernoulli = -h*ut
+    
+    print("Started unbound calculation...", flush=True)
+    unbound_flag = np.zeros((rho_3d.shape[0], rho_3d.shape[1], rho_3d.shape[2]))
+    #We use vectorized processing rather than using for loop: speedup is tremendous
+    unbound_flag[bernoulli > 1.0] = 1.0
+    
+    '''
+    unbound_flag = np.zeros((rho_3d.shape[0], rho_3d.shape[1], rho_3d.shape[2]))
+    #For unbound material: h*ut < -1 => -h*ut>1 => bernoulli>1
+    for i in range(rho_3d.shape[0]): #z
+      for j in range(rho_3d.shape[1]): #y
+        for k in range(rho_3d.shape[2]): #x
+            if bernoulli[i, j, k] > 1:                      
+                unbound_flag[i, j, k] = 1.0                  
+    '''
+    
+    del press_3d, bernoulli, ut, bvecxlow, bvecylow, bveczlow, velxlow, velylow, velzlow, betax_3d_ccc, betay_3d_ccc, betaz_3d_ccc, alp_3d_ccc
+    
+    #mass = (rho*wlorentz)*(sdetg*dx*dy*dz)
+    #KE = 0.5*(rho*wlorentz)*(v^2)*(sdetg*dx*dy*dz)
+    #IE = eps*(rho*wlorentz)*(sdetg*dx*dy*dz)
+    #ME = (0.5*bcom_sq)*(sdetg*dx*dy*dz)            
+    unbound_dens = sdetg*w*rho_3d*unbound_flag
+    unbound_KE = 0.5*sdetg*w*rho_3d*v2*unbound_flag 
+    unbound_IE = eps_3d*sdetg*w*rho_3d*unbound_flag
+    unbound_ME = 0.5*b2*sdetg*unbound_flag
+    
+    return selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, unbound_dens, unbound_KE, unbound_IE, unbound_ME
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////        
 
 from timeit import default_timer as timer        
@@ -401,14 +381,18 @@ Ref6_40: output-0000 to output-0055 (except output-0043)
 '''
 #------------------------------------------------------------------               
 
-#sim_name = "CCSN_12000km"   
-sim_name = "Ref6_40"
-#f = open("PNS_mass/PNS_mass_{}.txt".format(sim_name), "w", buffering=1) #means flush output after every line
-f = open("PNS_mass/test.txt".format(sim_name), "w", buffering=1) #TODO 
-f.write("#o/p  it       t_pb[ms]       level        PNS_mass[M]        PNS_radius[km]\n")
+#TODO
+sim_name = "CCSN_12000km"   
+#sim_name = "Ref6_40"
 
+#buffering=1 #means flush output after every line
+#TODO
+#f = open("ejecta_mass_energy/ejecta_mass_energy_{}_try2.txt".format(sim_name), "w", buffering=1) 
+f = open("ejecta_mass_energy/test.txt".format(sim_name), "w", buffering=1) 
+f.write("#o/p  it       t_pb[ms]       level        ejecta_mass[M]      ejecta_KE[erg]     ejecta_IE[erg]     ejecta_ME[erg]     ejecta_TE[erg]\n")
 
-for output_number in range(0, 56):      
+#TODO
+for output_number in range(105, 106):      
     parfile_name = "CCSN_12000km"
     verbose = False
     
@@ -429,23 +413,38 @@ for output_number in range(0, 56):
         
         #----------------------------------------------------------------------------
         start = timer()
-        level = 5  #which refinement level to load
-        selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, dens, mass_within_radius_km = \
-            get_derived_vars_3d(data_dir, input_iteration, level, verbose)
         
-        PNS_mass = dx*dy*dz*np.sum(dens)  
-        PNS_radius = mass_within_radius_km
-        print("At level {}: PNS mass = {} M_sun, PNS radius = {} km".format(level, PNS_mass, mass_within_radius_km));
+        level = -1
+        if sim_name == "Ref6_40":
+            level = 5
+        if sim_name == "CCSN_12000km":
+            level = 6    
+        
+        selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, \
+        unbound_dens, unbound_KE, unbound_IE, unbound_ME = \
+                 get_derived_vars_3d(data_dir, input_iteration, level, verbose)
+        
+        ejecta_mass = dx*dy*dz*np.sum(unbound_dens)  
+        ejecta_KE = dx*dy*dz*np.sum(unbound_KE)*1.7877e54 
+        ejecta_IE = dx*dy*dz*np.sum(unbound_IE)*1.7877e54  
+        ejecta_ME = dx*dy*dz*np.sum(unbound_ME)*1.7877e54 
+        ejecta_TE =  ejecta_KE + ejecta_IE + 4*3.14159265*ejecta_ME 
+        
+        print("At level {}: ejecta mass = {} M_sun".format(level, ejecta_mass));
+        print("At level {}: ejecta Kinetic Energy = {} erg".format(level, ejecta_KE));
+        print("At level {}: ejecta Internal Energy = {} erg".format(level, ejecta_IE));
+        print("At level {}: ejecta Magnetic Energy = {} erg".format(level, ejecta_ME));
+        print("At level {}: ejecta Total Energy = {} erg".format(level, ejecta_TE));
         
         end = timer()
         time_elapsed = end - start
         print("Time elapsed = {} seconds = {} minutes".format(round(time_elapsed), round(time_elapsed/60.0)))
         
-        print("Finished iteration {}, t = {}".format(input_iteration, time))
+        print("Finished iteration {}, t_pb = {} ms".format(input_iteration, time))
         print("---------------------------------------------------------------\n")
         sys.stdout.flush()
         
-        f.write("{}  {}  {}  {}     {}  {}\n".format(output_number, input_iteration, time, level, PNS_mass, PNS_radius))
+        f.write("{}  {}  {}  {}     {}     {}     {}     {}     {}\n".format(output_number, input_iteration, time, level, ejecta_mass, ejecta_KE, ejecta_IE, ejecta_ME, ejecta_TE))
         #----------------------------------------------------------------------------
 
 f.close()        

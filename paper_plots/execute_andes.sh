@@ -3,7 +3,7 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 echo -e "${GREEN}Copying plot.py to Andes..${NC}"
 
-scp -oControlMaster=auto -oControlPath=~/.ssh/copy_code-%C -oControlPersist=3600 PNS_mass.py  sshanka@andes.olcf.ornl.gov:/lustre/orion/ast154/scratch/sshanka/simulations/paper_plots/plot.py
+scp -oControlMaster=auto -oControlPath=~/.ssh/copy_code-%C -oControlPersist=3600 ejecta_mass_energy.py  sshanka@andes.olcf.ornl.gov:/lustre/orion/ast154/scratch/sshanka/simulations/paper_plots/plot.py
 #scp -oControlMaster=auto -oControlPath=~/.ssh/copy_code-%C -oControlPersist=3600 plot_final.py  sshanka@andes.olcf.ornl.gov:/lustre/orion/ast154/scratch/sshanka/simulations/paper_plots/plot.py
 
 echo " "

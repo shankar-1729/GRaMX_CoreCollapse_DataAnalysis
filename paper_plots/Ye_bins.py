@@ -228,7 +228,7 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
     selected_iteration, time, x0, y0, z0, dx, dy, dz, alp_3d = \
             get_3d_data("admbase_lapse", "admbase_alp", data_dir, input_iteration, level, verbose)                   
     selected_iteration, time, x0, y0, z0, dx, dy, dz, betax_3d = \
-            get_3d_data("admbase_shift", "admbase_betax", data_dir, input_iteration, level, verbose)           
+            get_3d_data("admbase_shift", "admbase_betax", data_dir, input_iteration, level, verbose)          
     selected_iteration, time, x0, y0, z0, dx, dy, dz, betay_3d = \
             get_3d_data("admbase_shift", "admbase_betay", data_dir, input_iteration, level, verbose)
     selected_iteration, time, x0, y0, z0, dx, dy, dz, betaz_3d = \
