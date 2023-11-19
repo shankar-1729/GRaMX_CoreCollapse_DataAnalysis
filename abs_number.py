@@ -39,7 +39,8 @@ display_physical_time = True
 if display_physical_time:
     time_factor = 203.0
     offset = 71928/203.0
-    plt.xlim(-0.4, 100)
+    #plt.xlim(-0.4, 150)
+    plt.xlim(80, 160)
 else:
     time_factor = 1.0 
     offset = 0.0
@@ -65,14 +66,6 @@ for output_number in range(0, latest_copied_output+1):
     if separate_chkpts:
         style = not style
 
-
-for output_number in range(1, latest_copied_output+1):     
-    file_name = "norms/{}-output-{}.tsv".format(var_name, str(output_number).zfill(4))
-    data = pd.read_csv(file_name, sep='\t', names=hydro_vars, comment="#");
-    time_start = round(data["2:time"][0], 2)
-    time_end = round(data["2:time"][data.last_valid_index()], 2)
-    time_elapsed = time_end - time_start
-    print("Output-{}({}-{});    Time elapsed: {} M, {} ms;      Rate = {} M/hr, {} ms/hr".format(str(output_number).zfill(4), round(time_start/203.0-offset,1), round(time_end/203.0-offset,1), round(time_elapsed,1), round(time_elapsed/203.0, 1), round(time_elapsed/2,1), round(time_elapsed/203.0/2.0,1)))
     
 plt.show()
 

@@ -5,11 +5,11 @@ out_path = "/gpfs/alpine/ast154/scratch/sshanka/carpetx_github/CCSN_12000km_anal
 parfile_name = "CCSN_12000km"
 sim_path = "/gpfs/alpine/ast154/scratch/sshanka/simulations/CCSN_12000km" 
 
-from termcolor import colored, cprint
+#from termcolor import colored, cprint
 #-----------------------------------------------------------------------------------------------------------------
 def execute_copy(var_name):
-    colortext = colored("Copying files for variable {}...".format(var_name), "green")
-    print(colortext)
+    #colortext = colored("Copying files for variable {}...".format(var_name), "green")
+    #print(colortext)
 
     #Determine the currently active output number
     os.system("ls {} | grep active > temp1.txt".format(sim_path))
@@ -33,7 +33,6 @@ def execute_copy(var_name):
     if(len(out_list) > 0):
         latest_copied_output = max(out_list)
     
-    #latest_copied_output = 106
     print("latest copied output number = {}".format(latest_copied_output))
     file1.close()
     os.system("rm temp2.txt")

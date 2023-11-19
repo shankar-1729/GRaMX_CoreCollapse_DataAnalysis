@@ -9,13 +9,41 @@ import matplotlib.colors as colors
 
 os.system("whoami")
 
-
-data_dir = "/gpfs/alpine/ast154/scratch/sshanka/simulations/debug_production7/output-0000/CCSN_12000km/"
-#data_dir = "/home/sshanka/simulations/CCSN_12000km/output-0000/CCSN_12000km/"
-
-
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////
-def get_data(group, gf, x_slice):
+#//////////////////////////////////////////////////////////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+def get_iteration_number_list(data_dir):
+
+    basename = None
+    for f in os.listdir(data_dir):
+        g = re.match(r'(.*)\.it\d+\.bp4?$', f)
+        if g:
+            basename = g.group(1)
+            break
+    assert basename is not None, "Could not find any appropriate .bp files in data-dir."
+        
+
+    fname = f"{data_dir}/{basename}.it%08T.bp4"
+    print("reading:",fname)
+
+    series = io.Series(fname, io.Access.read_only)
+    print("openPMD version:", series.openPMD)
+    if series.contains_attribute("author"):
+        print("Author: ",series.author)
+
+    #print("Available iterations:")
+    iteration_number = []
+    count = 0
+    for index in series.iterations:
+        iteration_number.append(index)
+        #print("Available iteration[{}] = {}".format(count, index))
+        count = count + 1
+    return iteration_number
+    
+#//////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+def get_data(group, gf, x_slice, data_dir, input_iteration):
     print(" ")
     print("group = {}, gf = {}".format(group, gf))
 
@@ -36,21 +64,14 @@ def get_data(group, gf, x_slice):
     if series.contains_attribute("author"):
         print("Author: ",series.author)
 
-    #-----------------------------------------------------
-    #Simple code
-    print("Available iterations:")
-    iteration_number = []
-    count = 0
-    for index in series.iterations:
-        iteration_number.append(index)
-        print("Available iteration[{}] = {}".format(count, index))
-        count = count + 1
-        
     #only load the first available index for now
-    selected_iteration =  iteration_number[0]   #TODO: May need to change this   
+    selected_iteration =  input_iteration   #TODO: May need to change this   
     itr = series.iterations[selected_iteration]
     print("itr: {}\n".format(itr))
 
+    time = (itr.time - 71928)/203.0
+    print("time = {}".format(time))
+    
     #which refinement level to load
     level = 6
 
@@ -155,28 +176,30 @@ def get_data(group, gf, x_slice):
     print("{}: min = {}, max = {}".format(gf, np.min(variable_2d_yz), np.max(variable_2d_yz)))
     
     #print(variable_2d_yz[32, 32])
-    return selected_iteration, y0, z0, dy, dz, variable_2d_yz   
+    return selected_iteration, time, y0, z0, dy, dz, variable_2d_yz   
 
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-def get_plasma_beta(x_slice):
+def get_plasma_beta(x_slice, data_dir, input_iteration):
     #Plot the plasma-beta
-    selected_iteration, y0, z0, dy, dz, press_2d_yz = get_data("hydrobase_press", "hydrobase_press", x_slice)
+    selected_iteration, time, y0, z0, dy, dz, press_2d_yz = get_data("hydrobase_press", "hydrobase_press", x_slice, data_dir, input_iteration)
 
-    selected_iteration, y0, z0, dy, dz, bvecx_2d_yz = get_data("hydrobase_bvec", "hydrobase_bvecx", x_slice)
-    selected_iteration, y0, z0, dy, dz, bvecy_2d_yz = get_data("hydrobase_bvec", "hydrobase_bvecy", x_slice)
-    selected_iteration, y0, z0, dy, dz, bvecz_2d_yz = get_data("hydrobase_bvec", "hydrobase_bvecz", x_slice)
+    selected_iteration, time, y0, z0, dy, dz, bvecx_2d_yz = get_data("hydrobase_bvec", "hydrobase_bvecx", x_slice, data_dir, input_iteration)
+    selected_iteration, time, y0, z0, dy, dz, bvecy_2d_yz = get_data("hydrobase_bvec", "hydrobase_bvecy", x_slice, data_dir, input_iteration)
+    selected_iteration, time, y0, z0, dy, dz, bvecz_2d_yz = get_data("hydrobase_bvec", "hydrobase_bvecz", x_slice, data_dir, input_iteration)
 
-    selected_iteration, y0, z0, dy, dz, velx_2d_yz = get_data("hydrobase_vel", "hydrobase_velx", x_slice)
-    selected_iteration, y0, z0, dy, dz, vely_2d_yz = get_data("hydrobase_vel", "hydrobase_vely", x_slice)
-    selected_iteration, y0, z0, dy, dz, velz_2d_yz = get_data("hydrobase_vel", "hydrobase_velz", x_slice)
+    selected_iteration, time, y0, z0, dy, dz, velx_2d_yz = get_data("hydrobase_vel", "hydrobase_velx", x_slice, data_dir, input_iteration)
+    selected_iteration, time, y0, z0, dy, dz, vely_2d_yz = get_data("hydrobase_vel", "hydrobase_vely", x_slice, data_dir, input_iteration)
+    selected_iteration, time, y0, z0, dy, dz, velz_2d_yz = get_data("hydrobase_vel", "hydrobase_velz", x_slice, data_dir, input_iteration)
 
-    selected_iteration, y0, z0, dy, dz, gxx_2d_yz = get_data("admbase_metric", "admbase_gxx", x_slice)
-    selected_iteration, y0, z0, dy, dz, gxy_2d_yz = get_data("admbase_metric", "admbase_gxy", x_slice)
-    selected_iteration, y0, z0, dy, dz, gxz_2d_yz = get_data("admbase_metric", "admbase_gxz", x_slice)
-    selected_iteration, y0, z0, dy, dz, gyy_2d_yz = get_data("admbase_metric", "admbase_gyy", x_slice)
-    selected_iteration, y0, z0, dy, dz, gyz_2d_yz = get_data("admbase_metric", "admbase_gyz", x_slice)
-    selected_iteration, y0, z0, dy, dz, gzz_2d_yz = get_data("admbase_metric", "admbase_gzz", x_slice)
+    selected_iteration, time, y0, z0, dy, dz, gxx_2d_yz = get_data("admbase_metric", "admbase_gxx", x_slice, data_dir, input_iteration)
+    selected_iteration, time, y0, z0, dy, dz, gxy_2d_yz = get_data("admbase_metric", "admbase_gxy", x_slice, data_dir, input_iteration)
+    selected_iteration, time, y0, z0, dy, dz, gxz_2d_yz = get_data("admbase_metric", "admbase_gxz", x_slice, data_dir, input_iteration)
+    selected_iteration, time, y0, z0, dy, dz, gyy_2d_yz = get_data("admbase_metric", "admbase_gyy", x_slice, data_dir, input_iteration)
+    selected_iteration, time, y0, z0, dy, dz, gyz_2d_yz = get_data("admbase_metric", "admbase_gyz", x_slice, data_dir, input_iteration)
+    selected_iteration, time, y0, z0, dy, dz, gzz_2d_yz = get_data("admbase_metric", "admbase_gzz", x_slice, data_dir, input_iteration)
+    
+    selected_iteration, time, y0, z0, dy, dz, rho_2d_yz = get_data("hydrobase_rho", "hydrobase_rho", x_slice, data_dir, input_iteration)
 
     #-------------------------------------------------------------------------------------------------
     #Average the 2d vertex-centered data to cell-centers (this is approx, averaging along x is missing)
@@ -214,12 +237,15 @@ def get_plasma_beta(x_slice):
 
     plasma_beta = 2.0*press_2d_yz/b2
     #p_over_bvec_sqr = 2.0*press_2d_yz/(bvecx_2d_yz*bvecx_2d_yz + bvecy_2d_yz*bvecy_2d_yz + bvecz_2d_yz*bvecz_2d_yz)
-    return selected_iteration, y0, z0, dy, dz, plasma_beta
+    
+    
+    magnetisation = b2/rho_2d_yz
+    return selected_iteration, time, y0, z0, dy, dz, plasma_beta, magnetisation, b2
     
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-def plot_data(selected_iteration, y0, z0, dy, dz, variable_2d_yz, gf, vmin_set, vmax_set, norm):
+def plot_data(selected_iteration, time, y0, z0, dy, dz, variable_2d_yz, gf, vmin_set, vmax_set, norm):
 
     #Prepare for plotting in yz-plane
     #Make first index along y and second index along z
@@ -257,55 +283,93 @@ def plot_data(selected_iteration, y0, z0, dy, dz, variable_2d_yz, gf, vmin_set, 
          
     print("vmin = {}, vmax = {}".format(vmin, vmax)) 
 
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(14,18))
+    plt.rcParams['font.size'] = 26
 
     if norm == "linear":     
-        plt.pcolor(y,z,variable_2d_yz,vmin=vmin,vmax=vmax, cmap="plasma")
+        #plt.pcolor(1.477*y, 1.477*z,variable_2d_yz,vmin=vmin,vmax=vmax, cmap="plasma")
+        plt.pcolor(1.477*y, 1.477*z,variable_2d_yz,vmin=vmin,vmax=vmax)
     elif norm == "log":
-        plt.pcolor(y,z, variable_2d_yz, cmap="plasma", norm=colors.LogNorm(vmin=vmin, vmax=vmax))
+        plt.pcolor(1.477*y, 1.477*z, variable_2d_yz, cmap="plasma", norm=colors.LogNorm(vmin=vmin, vmax=vmax))
     elif norm == "log_abs":
         variable_2d_yz_abs= abs(variable_2d_yz)
         vmin_abs = np.min(variable_2d_yz_abs) 
         vmax_abs = np.max(variable_2d_yz_abs) 
-        plt.pcolor(y,z, variable_2d_yz_abs, cmap="plasma", norm=colors.LogNorm(vmin=vmin_abs, vmax=vmax_abs))
+        plt.pcolor(1.477*y, 1.477*z, variable_2d_yz_abs, cmap="plasma", norm=colors.LogNorm(vmin=vmin_abs, vmax=vmax_abs))
     else:
         assert False, "unknown norm type"
     plt.colorbar()
-    plt.title("gf = {}, it = {}, x = {}, min = {}, max = {}".format(gf, selected_iteration, x_slice, np.min(variable_2d_yz), np.max(variable_2d_yz)))
-    plt.savefig("{}_yz.png".format(gf))
+    plt.xlim(-200*1.477, 200*1.477)
+    plt.ylim(-380*1.477, 380*1.477)
+    if gf == "plasma_beta":
+        #plt.title("plasma-beta parameter (P_fluid/P_magnetic) \n t_pb = {} ms \n min = {}".format(round(time,2)), round(np.min(variable_2d_yz), 4))
+        plt.title("plasma-beta (P_fluid/P_magnetic) \n t_pb = {} ms".format(round(time,2) ))
+    else:
+        plt.title("gf = {}, it = {}, x = {}\n min = {}, max = {}".format(gf, selected_iteration, x_slice, np.min(variable_2d_yz), np.max(variable_2d_yz)))
+           
+    plt.xlabel("y (km)")
+    plt.ylabel("z (km)")
+    plt.savefig("{}/{}_it{}_yz.png".format(gf, gf, selected_iteration))
     plt.close()
 
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-x_slice = -9.5
+x_slice = 0.0
+#data_dir = "/gpfs/alpine/ast154/scratch/sshanka/simulations/debug_production7/output-0000/CCSN_12000km/"
+#data_dir = "/gpfs/alpine/ast154/scratch/sshanka/simulations/debug_production11/output-0011/CCSN_12000km/"
 #norm = "linear", "log", "log_abs"
 
+
+for output_number in range(83, 89):
+    data_dir = "/gpfs/alpine/ast154/scratch/sshanka/simulations/CCSN_12000km/output-{}/CCSN_12000km/".format(str(output_number).zfill(4))
+
+    iteration_numbers = get_iteration_number_list(data_dir)
+    print(iteration_numbers)
+
+    for input_iteration in iteration_numbers:
+        group = "hydrobase_entropy"
+        gf = "hydrobase_entropy"
+        norm = "linear"
+        vmin_set = 1.0
+        vmax_set = 38.0
+        selected_iteration, time, y0, z0, dy, dz, variable_2d_yz = get_data(group, gf, x_slice, data_dir, input_iteration)
+        plot_data(selected_iteration, time, y0, z0, dy, dz, variable_2d_yz, gf, vmin_set, vmax_set, norm)
+
+
+        #Plot plasma-beta
+        norm = "log"
+        vmin_set = None
+        #vmax_set = None
+        selected_iteration, time, y0, z0, dy, dz, plasma_beta, magnetisation, b2 = get_plasma_beta(x_slice, data_dir, input_iteration)
+        plot_data(selected_iteration, time, y0, z0, dy, dz, plasma_beta, "plasma_beta", 0.01, 100.0, norm)
+        plot_data(selected_iteration, time, y0, z0, dy, dz, magnetisation, "magnetisation", None, None, norm)
+        #plot_data(selected_iteration, y0, z0, dy, dz, b2, "b2", vmin_set, None, norm)
+
+
+
+
+'''
 #Plot rho 
 group = "hydrobase_rho"
 gf = "hydrobase_rho" 
 norm = "log" 
-vmin_set = None
+vmin_set = 1e-12
 vmax_set = 1e-9
-selected_iteration, y0, z0, dy, dz, variable_2d_yz = get_data(group, gf, x_slice)
+selected_iteration, y0, z0, dy, dz, variable_2d_yz = get_data(group, gf, x_slice, data_dir)
 plot_data(selected_iteration, y0, z0, dy, dz, variable_2d_yz, gf, vmin_set, vmax_set, norm)
 
 #Plot temperature
 group = "hydrobase_temperature"
 gf = "hydrobase_temperature"
 norm = "linear"
-vmin_set = None
-vmax_set = 1.0
-selected_iteration, y0, z0, dy, dz, variable_2d_yz = get_data(group, gf, x_slice)
+vmin_set = 0.1
+vmax_set = 10.0
+selected_iteration, y0, z0, dy, dz, variable_2d_yz = get_data(group, gf, x_slice, data_dir)
 plot_data(selected_iteration, y0, z0, dy, dz, variable_2d_yz, gf, vmin_set, vmax_set, norm)
+'''
 
-
-#Plot plasma-beta
-norm = "log"
-vmin_set = None
-vmax_set = 0.1
-selected_iteration, y0, z0, dy, dz, plasma_beta = get_plasma_beta(x_slice)
-plot_data(selected_iteration, y0, z0, dy, dz, plasma_beta, "plasma_beta", vmin_set, vmax_set, norm)
-#plot_data(selected_iteration, y0, z0, dy, dz, p_over_bvec_sqr, "p_over_bvec_sqr", vmin_set, vmax_set, norm)
 
 '''
 #/////////////////////////////////////////////////////////////////

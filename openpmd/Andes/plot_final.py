@@ -308,8 +308,8 @@ def plot_data_xz(selected_iteration, time, y0, z0, dy, dz, variable_2d_yz, gf, v
     plt.colorbar()
     #plt.xlim(-250*1.477, 250*1.477)
     #plt.ylim(-400*1.477, 400*1.477)
-    #plt.xlim(-50, 50)
-    #plt.ylim(-110, 110)
+    plt.xlim(-60, 60)
+    plt.ylim(-60, 60)
     plt.title("gf = {}\n it = {}, t = {} y = {}\n min = {}\n max = {}".format(gf, selected_iteration, round(time, 2), x_slice, np.min(variable_2d_yz), np.max(variable_2d_yz)))
            
     plt.xlabel("x (M)")
@@ -862,8 +862,8 @@ def plot_data_xy(selected_iteration, time, y0, z0, dy, dz, variable_2d_yz, gf, v
     plt.colorbar()
     #plt.xlim(-250*1.477, 250*1.477)
     #plt.ylim(-400*1.477, 400*1.477)
-    #plt.xlim(-200, 200)
-    #plt.ylim(-200, 200)
+    #plt.xlim(-70, 70)
+    #plt.ylim(-70, 70)
     plt.title("gf = {}, it = {}, t = {} ms,  z = {}\n min = {}\n max = {}".format(gf, selected_iteration, round(time, 2), x_slice, np.min(variable_2d_yz), np.max(variable_2d_yz)))
            
     plt.xlabel("x (M)")
@@ -883,9 +883,17 @@ def plot_xz(data_dir, input_iteration, groups, gfs, norms, vmins, vmaxs, level, 
         norm = norms[i]
         vmin_set = vmins[i]
         vmax_set = vmaxs[i]
-        selected_iteration, time, y0, z0, dy, dz, variable_2d = \
-        get_data_xz(group, gf, y_slice, data_dir, input_iteration, level)
+        
+        if group == "plasma_beta":
+            selected_iteration, time, y0, z0, dy, dz, plasma_beta, magnetisation, b2, w = \
+            get_plasma_beta_xz(y_slice, data_dir, input_iteration, level)
+            variable_2d = plasma_beta
+        else: 
+            selected_iteration, time, y0, z0, dy, dz, variable_2d = \
+            get_data_xz(group, gf, y_slice, data_dir, input_iteration, level)
+        
         plot_data_xz(selected_iteration, time, y0, z0, dy, dz, variable_2d, gf, vmin_set, vmax_set, norm, level, y_slice)
+        
 
 def plot_yz(data_dir, input_iteration, groups, gfs, norms, vmins, vmaxs, level, x_slice):
     num_groups = len(groups)
@@ -895,8 +903,14 @@ def plot_yz(data_dir, input_iteration, groups, gfs, norms, vmins, vmaxs, level, 
         norm = norms[i]
         vmin_set = vmins[i]
         vmax_set = vmaxs[i]
-        selected_iteration, time, y0, z0, dy, dz, variable_2d = \
-        get_data_yz(group, gf, x_slice, data_dir, input_iteration, level)
+        if group == "plasma_beta":
+            selected_iteration, time, y0, z0, dy, dz, plasma_beta, magnetisation, b2, w = \
+            get_plasma_beta_yz(x_slice, data_dir, input_iteration, level)
+            variable_2d = plasma_beta
+        else: 
+            selected_iteration, time, y0, z0, dy, dz, variable_2d = \
+            get_data_yz(group, gf, x_slice, data_dir, input_iteration, level)
+            
         plot_data_yz(selected_iteration, time, y0, z0, dy, dz, variable_2d, gf, vmin_set, vmax_set, norm, level, x_slice)
 
 def plot_xy(data_dir, input_iteration, groups, gfs, norms, vmins, vmaxs, level, z_slice):
@@ -907,18 +921,25 @@ def plot_xy(data_dir, input_iteration, groups, gfs, norms, vmins, vmaxs, level, 
         norm = norms[i]
         vmin_set = vmins[i]
         vmax_set = vmaxs[i]
-        selected_iteration, time, y0, z0, dy, dz, variable_2d = \
-        get_data_xy(group, gf, z_slice, data_dir, input_iteration, level)
+        if group == "plasma_beta":
+            selected_iteration, time, y0, z0, dy, dz, plasma_beta, magnetisation, b2, w = \
+            get_plasma_beta_xy(z_slice, data_dir, input_iteration, level)
+            variable_2d = plasma_beta
+        else: 
+            selected_iteration, time, y0, z0, dy, dz, variable_2d = \
+            get_data_xy(group, gf, z_slice, data_dir, input_iteration, level)
+        
         plot_data_xy(selected_iteration, time, y0, z0, dy, dz, variable_2d, gf, vmin_set, vmax_set, norm, level, z_slice)
         
                
 
-#for output_number in range(70, 119):
-for output_number in range(0, 8):
+#for output_number in range(53, 54):
+for output_number in range(9, 10):
     #sim_name = "CCSN_12000km"   
-    #sim_name = "debug_production7"
-    #sim_name = "test_driftcorrect"
-    sim_name = "CCSN12Ko1"  
+    sim_name = "Ref6_40"
+    #sim_name = "noSync_Ref6_40"
+    #sim_name = "CCSN12Ko1"  
+    #sim_name = "ENO2_FB0"  
     parfile_name = "CCSN_12000km"
     data_dir = "/gpfs/alpine/ast154/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
    
@@ -929,28 +950,75 @@ for output_number in range(0, 8):
         
         level = 5  #which refinement level to load
    
-        groups = ["hydrobase_temperature", 
-                  "hydrobase_ye", 
-                  "hydrobase_press"]
+        
+        groups = ["hydrobase_temperature",
+                  "hydrobase_rho",
+                  #"neutrinoleakage_neutrinoleakage_abs",
+                  #"hydrobase_bvec",
+                  #"hydrobase_bvec",
+                  #"hydrobase_bvec",
+                  #"plasma_beta", 
+                  "hydrobase_ye"]
                   
         gfs = ["hydrobase_temperature", 
-               "hydrobase_ye", 
-               "hydrobase_press"]
+               "hydrobase_rho",
+               #"neutrinoleakage_abs_number",
+               #"hydrobase_bvecx",
+               #"hydrobase_bvecy",
+               #"hydrobase_bvecz",
+               #"plasma_beta", 
+               "hydrobase_ye"]
         
-        norms = ["linear", "linear", "log"]
-        vmins = [0.0, None, None]
-        vmaxs = [4.0, None, None]
+        norms = ["linear",
+                 "log",
+                 #"linear",
+                 #"log_abs", 
+                 #"log_abs", 
+                 #"log_abs", 
+                 #"log", 
+                 "linear"]
+                 
+        vmins = [None, #0.0, 
+                 None,
+                 #None,
+                 #None, 
+                 #None, 
+                 #None, 
+                 #1e-3, 
+                 None]
+                 
+        vmaxs = [8.0, 
+                 None,
+                 #None, 
+                 #None,
+                 #None, 
+                 #None,  
+                 #1, 
+                 None]
+        
+        
+        '''
+        groups = ["hydrobase_entropy"]
+                  
+        gfs = ["hydrobase_entropy"]
+        
+        norms = ["linear"]
+                 
+        vmins = [0.0]
+                 
+        vmaxs = [50.0]
+        '''
         
         #////////////////////////////////////////////////////////////////////////////
-        y_slice = 0.0   #which y value to take in xz-plane
+        y_slice = 16.0 #30.0   #which y value to take in xz-plane
         plot_xz(data_dir, input_iteration, groups, gfs, norms, vmins, vmaxs, level, y_slice)
         
         #////////////////////////////////////////////////////////////////////////////
         x_slice = 0.0   #which x value to take in yz-plane
-        plot_yz(data_dir, input_iteration, groups, gfs, norms, vmins, vmaxs, level, x_slice)
+        #plot_yz(data_dir, input_iteration, groups, gfs, norms, vmins, vmaxs, level, x_slice)
         
         #////////////////////////////////////////////////////////////////////////////
-        z_slice = 0.0   #which z value to take in xy-plane
-        plot_xy(data_dir, input_iteration, groups, gfs, norms, vmins, vmaxs, level, z_slice)
+        z_slice = 18.0   #which z value to take in xy-plane
+        #plot_xy(data_dir, input_iteration, groups, gfs, norms, vmins, vmaxs, level, z_slice)
         
         

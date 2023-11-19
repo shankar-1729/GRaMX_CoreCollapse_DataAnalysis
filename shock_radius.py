@@ -54,7 +54,8 @@ plot_max_shock = False
 if display_physical_time:
     time_factor = 203.0
     offset = 71928/203.0
-    plt.xlim(-0.4, 100)
+    plt.xlim(-0.4, 160)
+    #plt.xlim(80, 150)
 else:
     time_factor = 1.0 
     offset = 0.0
@@ -82,6 +83,11 @@ for output_number in range(0, latest_copied_output+1):
         file_name_z = "scalars/shocktracker-max_shock_radius_z-output-{}.tsv".format(str(output_number).zfill(4))
         data_z = pd.read_csv(file_name_z, sep='\t', names=hydro_vars_z, comment="#");
         plt.scatter(data_z["2:time"]/time_factor-offset, 1.477*data_z["3:max_shock_radius_z"], s=dot_marker_size, marker="*", facecolors='green', edgecolors='green')
+        
+        if output_number == latest_copied_output - 1 and data_z.last_valid_index() != None:
+            print("output-{}".format(str(output_number).zfill(4)), data_z["2:time"][data_z.last_valid_index()]/time_factor-offset, 1.477*data_z["3:max_shock_radius_z"][data_z.last_valid_index()])
+        if output_number == latest_copied_output and data_z.last_valid_index() != None:
+            print("output-{}".format(str(output_number).zfill(4)), data_z["2:time"][data_z.last_valid_index()]/time_factor-offset, 1.477*data_z["3:max_shock_radius_z"][data_z.last_valid_index()])
         
     if plot_max_shock:     
         file_name = "scalars/shocktracker-max_shock_radius-output-{}.tsv".format(str(output_number).zfill(4))

@@ -185,177 +185,6 @@ def get_3d_data(group, gf, data_dir, input_iteration, level, verbose):
     
     return selected_iteration, time, x0, y0, z0, dx, dy, dz, variable_3d
 
-#///////////////////////////////////////////////////////////////////////////////////
-
-def plot_data(selected_iteration, time, x0, y0, z0, dx, dy, dz, variable_3d, gf, vmin_set, vmax_set, norm, level, x_slice, y_slice, colormap, xmin, xmax, ymin, ymax, M_to_km):
-    
-    #---------------------------------------------------------------------------
-    #----------------------------- Plot in yz-plane ----------------------------
-    #---------------------------------------------------------------------------
-    xv = np.linspace(x0, (variable_3d.shape[2]-1)*dx+x0, variable_3d.shape[2])
-    x_slice_index = np.where(abs(xv-x_slice)<=dx)[0][0]
-    print("x_slice = {}, x_slice_index = {}".format(x_slice, x_slice_index))
-    variable_2d_yz = variable_3d[:, :, x_slice_index]   #(z, y, x)
-    
-    variable_2d_yz = np.transpose(variable_2d_yz)
-
-    size_y_plot = variable_2d_yz.shape[0]
-    size_z_plot = variable_2d_yz.shape[1]
-
-    # Create a linear array for each axis
-    yv = np.linspace(y0, (size_y_plot-1)*dy+y0, size_y_plot)
-    zv = np.linspace(z0, (size_z_plot-1)*dz+z0, size_z_plot)
-
-    # Sanity
-    assert yv.shape[0] == size_y_plot
-    assert zv.shape[0] == size_z_plot
-
-    z = np.zeros(variable_2d_yz.shape)
-    y = np.zeros(variable_2d_yz.shape)
-    #print(variable_2d_yz.shape, yv.shape[0], zv.shape[0])
-    for i in range(yv.shape[0]):
-        for j in range(zv.shape[0]):
-            z[i,j] = zv[j]
-            y[i,j] = yv[i]
-
-    if vmin_set is None:
-        vmin = np.min(variable_2d_yz)
-    else:
-        vmin = vmin_set
-
-    if vmax_set is None: 
-        vmax = np.max(variable_2d_yz)
-    else:
-        vmax = vmax_set
-         
-    print("vmin = {}, vmax = {}".format(vmin, vmax)) 
-
-    plt.figure(figsize=(14,18))
-    plt.rcParams['font.size'] = 26
-
-    if norm == "linear":     
-        #plt.pcolor(1.477*y, 1.477*z,variable_2d_yz,vmin=vmin,vmax=vmax, cmap="plasma")
-        #plt.pcolor(1.477*y, 1.477*z,variable_2d_yz,vmin=vmin,vmax=vmax)
-        plt.pcolor(M_to_km*y, M_to_km*z, variable_2d_yz, cmap=colormap, vmin=vmin, vmax=vmax)
-    elif norm == "log":
-        #plt.pcolor(1.477*y, 1.477*z, variable_2d_yz, cmap="plasma", norm=colors.LogNorm(vmin=vmin, vmax=vmax))
-        plt.pcolor(M_to_km*y, M_to_km*z, variable_2d_yz, cmap=colormap, norm=colors.LogNorm(vmin=vmin, vmax=vmax))
-    elif norm == "log_abs":
-        variable_2d_yz_abs= abs(variable_2d_yz)
-        vmin_abs = np.min(variable_2d_yz_abs) 
-        vmax_abs = np.max(variable_2d_yz_abs) 
-        #plt.pcolor(1.477*y, 1.477*z, variable_2d_yz_abs, cmap="plasma", norm=colors.LogNorm(vmin=vmin_abs, vmax=vmax_abs))
-        plt.pcolor(M_to_km*y, M_to_km*z, variable_2d_yz_abs, ccmap=colormap, norm=colors.LogNorm(vmin=vmin_abs, vmax=vmax_abs))
-    else:
-        assert False, "unknown norm type"
-    plt.colorbar()
-    #plt.xlim(-210*1.477, 210*1.477)
-    #plt.ylim(-400*1.477, 400*1.477)
-    
-    if(xmin != None and xmax != None):
-        plt.xlim(xmin, xmax)
-    if(ymin != None and ymax != None):
-        plt.ylim(ymin, ymax)
-        
-    if movie_flag:
-        plt.title("variable = {}\n iteration = {}, time = {} ms".format(gf, selected_iteration, round(time, 2)))
-    else:
-        plt.title("gf = {}\n it = {}, t = {}, x = {}\n min = {}\n max = {}".format(gf, selected_iteration, round(time, 2), x_slice, np.min(variable_2d_yz), np.max(variable_2d_yz)))
-           
-    #M_to_km is either 1.0 or 1.477
-    if(M_to_km > 1.1):   
-        plt.xlabel("y (km)")
-        plt.ylabel("z (km)")
-    else:
-        plt.xlabel("y (M)")
-        plt.ylabel("z (M)")
-        
-    plt.savefig("3d_out/ref{}/{}_yz_it{}.png".format(level, gf, selected_iteration))
-    plt.close()
-    
-    #---------------------------------------------------------------------------
-    #----------------------------- Plot in xz-plane ----------------------------
-    #---------------------------------------------------------------------------
-    yv = np.linspace(y0, (variable_3d.shape[1]-1)*dy+y0, variable_3d.shape[1])
-    y_slice_index = np.where(abs(yv-y_slice)<=dy)[0][0]
-    print("y_slice = {}, y_slice_index = {}".format(y_slice, y_slice_index))
-    variable_2d_xz = variable_3d[:, y_slice_index, :]   #(z, y, x)
-    
-    variable_2d_xz = np.transpose(variable_2d_xz)
-
-    size_x_plot = variable_2d_xz.shape[0]
-    size_z_plot = variable_2d_xz.shape[1]
-
-    # Create a linear array for each axis
-    xv = np.linspace(x0, (size_x_plot-1)*dx+x0, size_x_plot)
-    zv = np.linspace(z0, (size_z_plot-1)*dz+z0, size_z_plot)
-
-    # Sanity
-    assert xv.shape[0] == size_x_plot
-    assert zv.shape[0] == size_z_plot
-
-    z = np.zeros(variable_2d_xz.shape)
-    x = np.zeros(variable_2d_xz.shape)
-    for i in range(xv.shape[0]):
-        for j in range(zv.shape[0]):
-            z[i,j] = zv[j]
-            x[i,j] = xv[i]
-
-    if vmin_set is None:
-        vmin = np.min(variable_2d_xz)
-    else:
-        vmin = vmin_set
-
-    if vmax_set is None: 
-        vmax = np.max(variable_2d_xz)
-    else:
-        vmax = vmax_set
-         
-    print("vmin = {}, vmax = {}".format(vmin, vmax)) 
-
-    plt.figure(figsize=(14,18))
-    plt.rcParams['font.size'] = 26
-
-    if norm == "linear":     
-        #plt.pcolor(1.477*y, 1.477*z,variable_2d_xz,vmin=vmin,vmax=vmax, cmap="plasma")
-        #plt.pcolor(1.477*y, 1.477*z,variable_2d_xz,vmin=vmin,vmax=vmax)
-        plt.pcolor(M_to_km*x, M_to_km*z, variable_2d_xz, cmap=colormap, vmin=vmin, vmax=vmax)
-    elif norm == "log":
-        #plt.pcolor(1.477*y, 1.477*z, variable_2d_xz, cmap="plasma", norm=colors.LogNorm(vmin=vmin, vmax=vmax))
-        plt.pcolor(M_to_km*x, M_to_km*z, variable_2d_xz, cmap=colormap, norm=colors.LogNorm(vmin=vmin, vmax=vmax))
-    elif norm == "log_abs":
-        variable_2d_xz_abs= abs(variable_2d_xz)
-        vmin_abs = np.min(variable_2d_xz_abs) 
-        vmax_abs = np.max(variable_2d_xz_abs) 
-        #plt.pcolor(1.477*y, 1.477*z, variable_2d_xz_abs, cmap="plasma", norm=colors.LogNorm(vmin=vmin_abs, vmax=vmax_abs))
-        plt.pcolor(M_to_km*x, M_to_km*z, variable_2d_xz_abs, ccmap=colormap, norm=colors.LogNorm(vmin=vmin_abs, vmax=vmax_abs))
-    else:
-        assert False, "unknown norm type"
-    plt.colorbar()
-    #plt.xlim(-210*1.477, 210*1.477)
-    #plt.ylim(-400*1.477, 400*1.477)
-    
-    if(xmin != None and xmax != None):
-        plt.xlim(xmin, xmax)
-    if(ymin != None and ymax != None):
-        plt.ylim(ymin, ymax)
-        
-    if movie_flag:
-        plt.title("variable = {}\n iteration = {}, time = {} ms".format(gf, selected_iteration, round(time, 2)))
-    else:
-        plt.title("gf = {}\n it = {}, t = {}, y = {}\n min = {}\n max = {}".format(gf, selected_iteration, round(time, 2), x_slice, np.min(variable_2d_xz), np.max(variable_2d_xz)))
-           
-    #M_to_km is either 1.0 or 1.477
-    if(M_to_km > 1.1):   
-        plt.xlabel("x (km)")
-        plt.ylabel("z (km)")
-    else:
-        plt.xlabel("x (M)")
-        plt.ylabel("z (M)")
-        
-    plt.savefig("3d_out/ref{}/{}_xz_it{}.png".format(level, gf, selected_iteration))
-    plt.close()
-
 
 
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -366,7 +195,8 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
             get_3d_data("hydrobase_press", "hydrobase_press", data_dir, input_iteration, level, verbose)
     selected_iteration, time, x0, y0, z0, dx, dy, dz, eps_3d = \
             get_3d_data("hydrobase_eps", "hydrobase_eps", data_dir, input_iteration, level, verbose)
-                            
+    selected_iteration, time, x0, y0, z0, dx, dy, dz, ye_3d = \
+            get_3d_data("hydrobase_ye", "hydrobase_ye", data_dir, input_iteration, level, verbose)                        
     selected_iteration, time, x0, y0, z0, dx, dy, dz, velx_3d = \
             get_3d_data("hydrobase_vel", "hydrobase_velx", data_dir, input_iteration, level, verbose)
     selected_iteration, time, x0, y0, z0, dx, dy, dz, vely_3d = \
@@ -415,54 +245,7 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
     betax_3d_ccc = np.zeros((gxx_3d.shape[0]-1, gxx_3d.shape[1]-1, gxx_3d.shape[2]-1))
     betay_3d_ccc = np.zeros((gxx_3d.shape[0]-1, gxx_3d.shape[1]-1, gxx_3d.shape[2]-1))
     betaz_3d_ccc = np.zeros((gxx_3d.shape[0]-1, gxx_3d.shape[1]-1, gxx_3d.shape[2]-1))
-    
-    '''
-    #This loops takes the majority of processing time
-    for i in range(gxx_3d.shape[0]-1):
-      for j in range(gxx_3d.shape[1]-1):
-        for k in range(gxx_3d.shape[2]-1):
-          gxx_3d_ccc[i, j, k] = 0.125*(gxx_3d[i, j, k] + gxx_3d[i, j+1, k] + \
-                                       gxx_3d[i, j, k+1] + gxx_3d[i, j+1, k+1] + \
-                                       gxx_3d[i+1, j, k] + gxx_3d[i+1, j+1, k] + \
-                                       gxx_3d[i+1, j, k+1] + gxx_3d[i+1, j+1, k+1])
-          gxy_3d_ccc[i, j, k] = 0.125*(gxy_3d[i, j, k] + gxy_3d[i, j+1, k] + \
-                                       gxy_3d[i, j, k+1] + gxy_3d[i, j+1, k+1] + \
-                                       gxy_3d[i+1, j, k] + gxy_3d[i+1, j+1, k] + \
-                                       gxy_3d[i+1, j, k+1] + gxy_3d[i+1, j+1, k+1])
-          gxz_3d_ccc[i, j, k] = 0.125*(gxz_3d[i, j, k] + gxz_3d[i, j+1, k] + \
-                                       gxz_3d[i, j, k+1] + gxz_3d[i, j+1, k+1] + \
-                                       gxz_3d[i+1, j, k] + gxz_3d[i+1, j+1, k] + \
-                                       gxz_3d[i+1, j, k+1] + gxz_3d[i+1, j+1, k+1])
-          gyy_3d_ccc[i, j, k] = 0.125*(gyy_3d[i, j, k] + gyy_3d[i, j+1, k] + \
-                                       gyy_3d[i, j, k+1] + gyy_3d[i, j+1, k+1] + \
-                                       gyy_3d[i+1, j, k] + gyy_3d[i+1, j+1, k] + \
-                                       gyy_3d[i+1, j, k+1] + gyy_3d[i+1, j+1, k+1])
-          gyz_3d_ccc[i, j, k] = 0.125*(gyz_3d[i, j, k] + gyz_3d[i, j+1, k] + \
-                                       gyz_3d[i, j, k+1] + gyz_3d[i, j+1, k+1] + \
-                                       gyz_3d[i+1, j, k] + gyz_3d[i+1, j+1, k] + \
-                                       gyz_3d[i+1, j, k+1] + gyz_3d[i+1, j+1, k+1])
-          gzz_3d_ccc[i, j, k] = 0.125*(gzz_3d[i, j, k] + gzz_3d[i, j+1, k] + \
-                                       gzz_3d[i, j, k+1] + gzz_3d[i, j+1, k+1] + \
-                                       gzz_3d[i+1, j, k] + gzz_3d[i+1, j+1, k] + \
-                                       gzz_3d[i+1, j, k+1] + gzz_3d[i+1, j+1, k+1])
-    '''
-    
-    #Don't average for now (until I figure out parallelization)
-    '''
-    for i in range(gxx_3d.shape[0]-1): #z
-      for j in range(gxx_3d.shape[1]-1): #y
-        for k in range(gxx_3d.shape[2]-1): #x
-          gxx_3d_ccc[i, j, k] = gxx_3d[i, j, k]                                      
-          gxy_3d_ccc[i, j, k] = gxy_3d[i, j, k]                                      
-          gxz_3d_ccc[i, j, k] = gxz_3d[i, j, k]                                     
-          gyy_3d_ccc[i, j, k] = gyy_3d[i, j, k] 
-          gyz_3d_ccc[i, j, k] = gyz_3d[i, j, k] 
-          gzz_3d_ccc[i, j, k] = gzz_3d[i, j, k]
-          alp_3d_ccc[i, j, k] = alp_3d[i, j, k]
-          betax_3d_ccc[i, j, k] = betax_3d[i, j, k]
-          betay_3d_ccc[i, j, k] = betay_3d[i, j, k]
-          betaz_3d_ccc[i, j, k] = betaz_3d[i, j, k] 
-    '''          
+        
     
     print("Started metric calculation...", flush=True)
     #strip the last element of metric to make its shape same as hydro variables
@@ -512,33 +295,35 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
     ut = w*(velxlow*betax_3d_ccc + velylow*betay_3d_ccc + velzlow*betaz_3d_ccc - alp_3d_ccc) 
     bernoulli = - (1.0 + eps_3d + (press_3d + b2) / rho_3d) * ut   #bernoulli = -h*ut
     
-    print("Started unbound calculation...", flush=True)
+    del press_3d, ut, bvecxlow, bvecylow, bveczlow, velxlow, velylow, velzlow, betax_3d_ccc, betay_3d_ccc, betaz_3d_ccc, alp_3d_ccc
+    #-------------------------------------------------------------------------------------------
+    
+    #Calculation of ye bins
+    print("Started unbound ye calculation...", flush=True)
+    ye_bin = []
+    ye_bin_mass = []  
+    delta_ye_bin = 0.02
+    ye_bin_start = 0.0
+    
+    while ye_bin_start+delta_ye_bin <= 0.58:
+        #total unbound mass in a given ye bin: [ye_bin_start, ye_bin_end)
+        ye_bin_end = ye_bin_start + delta_ye_bin
+        unbound_ye_flag = np.zeros((rho_3d.shape[0], rho_3d.shape[1], rho_3d.shape[2]))
+        unbound_ye_flag[(bernoulli > 1.0) & (ye_3d >= ye_bin_start) & (ye_3d < ye_bin_end)] = 1.0
+        unbound_dens_ye_bin = sdetg*w*rho_3d*unbound_ye_flag 
+        total_mass_ye_bin = dx*dy*dz*np.sum(unbound_dens_ye_bin)
+        print("Ejecta mass in Ye range [{}, {}) = {}".format(round(ye_bin_start, 2), round(ye_bin_end, 2), total_mass_ye_bin), flush=True)
+        ye_bin.append(ye_bin_start)
+        ye_bin_mass.append(total_mass_ye_bin)
+        ye_bin_start = ye_bin_start + delta_ye_bin
+    
+    #total unbound mass
     unbound_flag = np.zeros((rho_3d.shape[0], rho_3d.shape[1], rho_3d.shape[2]))
-    #We use vectorized processing rather than using for loop: speedup is tremendous
     unbound_flag[bernoulli > 1.0] = 1.0
-    
-    '''
-    unbound_flag = np.zeros((rho_3d.shape[0], rho_3d.shape[1], rho_3d.shape[2]))
-    #For unbound material: h*ut < -1 => -h*ut>1 => bernoulli>1
-    for i in range(rho_3d.shape[0]): #z
-      for j in range(rho_3d.shape[1]): #y
-        for k in range(rho_3d.shape[2]): #x
-            if bernoulli[i, j, k] > 1:                      
-                unbound_flag[i, j, k] = 1.0                  
-    '''
-    
-    del press_3d, bernoulli, ut, bvecxlow, bvecylow, bveczlow, velxlow, velylow, velzlow, betax_3d_ccc, betay_3d_ccc, betaz_3d_ccc, alp_3d_ccc
-    
-    #mass = (rho*wlorentz)*(sdetg*dx*dy*dz)
-    #KE = 0.5*(rho*wlorentz)*(v^2)*(sdetg*dx*dy*dz)
-    #IE = eps*(rho*wlorentz)*(sdetg*dx*dy*dz)
-    #ME = (0.5*bcom_sq)*(sdetg*dx*dy*dz)            
     unbound_dens = sdetg*w*rho_3d*unbound_flag
-    unbound_KE = 0.5*sdetg*w*rho_3d*v2*unbound_flag 
-    unbound_IE = eps_3d*sdetg*w*rho_3d*unbound_flag
-    unbound_ME = 0.5*b2*sdetg*unbound_flag
+    total_mass = dx*dy*dz*np.sum(unbound_dens)
     
-    return selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, unbound_dens, unbound_KE, unbound_IE, unbound_ME, unbound_flag
+    return selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, total_mass, ye_bin, ye_bin_mass, delta_ye_bin
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////        
 
 from timeit import default_timer as timer        
@@ -553,17 +338,11 @@ Ref6_40: output-0000 to output-0055 (except output-0043)
 #------------------------------------------------------------------               
 
 #TODO
-sim_name = "CCSN_12000km"   
-#sim_name = "Ref6_40"
-
-#buffering=1 #means flush output after every line
-#TODO
-#f = open("ejecta_mass_energy/ejecta_mass_energy_{}_try2.txt".format(sim_name), "w", buffering=1) 
-f = open("ejecta_mass_energy/test.txt".format(sim_name), "w", buffering=1) 
-f.write("#o/p  it       t_pb[ms]       level        ejecta_mass[M]      ejecta_KE[erg]     ejecta_IE[erg]     ejecta_ME[erg]     ejecta_TE[erg]\n")
+#sim_name = "CCSN_12000km"   
+sim_name = "Ref6_40"
 
 #TODO
-for output_number in range(80, 106):      
+for output_number in range(0, 56):      
     parfile_name = "CCSN_12000km"
     verbose = False
     
@@ -576,6 +355,7 @@ for output_number in range(80, 106):
     iteration_numbers = get_iteration_number_list(data_dir)
     print("Running output-{}:: found iterations {}".format(str(output_number).zfill(4), iteration_numbers), flush=True)   
     
+    #TODO: Try to use multithreading
     for input_iteration in iteration_numbers:
         
         if input_iteration != iteration_numbers[0]:
@@ -591,21 +371,26 @@ for output_number in range(80, 106):
             level = 6    
         
         selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, \
-        unbound_dens, unbound_KE, unbound_IE, unbound_ME, unbound_flag = \
+        total_mass, ye_bin, ye_bin_mass, delta_ye_bin = \
                  get_derived_vars_3d(data_dir, input_iteration, level, verbose)
+       
         
-        ejecta_mass = dx*dy*dz*np.sum(unbound_dens)  
-        ejecta_KE = dx*dy*dz*np.sum(unbound_KE)*1.7877e54 
-        ejecta_IE = dx*dy*dz*np.sum(unbound_IE)*1.7877e54  
-        ejecta_ME = dx*dy*dz*np.sum(unbound_ME)*1.7877e54 
-        ejecta_TE =  ejecta_KE + ejecta_IE + 4*3.14159265*ejecta_ME 
+        print("At level {}: ejecta mass = {} M_sun".format(level, total_mass));
+        for i in range(len(ye_bin)):
+            print("Ejecta mass in Ye bin {} = {} M_sun = {}% of total".format(round(ye_bin[i], 2), ye_bin_mass[i], round(ye_bin_mass[i]*100.0/total_mass, 4)), flush=True)
         
-        print("At level {}: ejecta mass = {} M_sun".format(level, ejecta_mass));
-        print("At level {}: ejecta Kinetic Energy = {} erg".format(level, ejecta_KE));
-        print("At level {}: ejecta Internal Energy = {} erg".format(level, ejecta_IE));
-        print("At level {}: ejecta Magnetic Energy = {} erg".format(level, ejecta_ME));
-        print("At level {}: ejecta Total Energy = {} erg".format(level, ejecta_TE));
         
+        #Write the output to file
+        #TODO
+        f = open("ejecta_ye_bin/ejecta_ye_bin_it{}_level{}.txt".format(selected_iteration, level), "w", buffering=1) 
+        #f = open("ejecta_ye_bin/test.txt".format(sim_name), "w", buffering=1) 
+        f.write("#o/p  it       t_pb[ms]       level        ejecta_mass[M]\n")
+        f.write("#{}  {}  {}  {}     {}\n".format(output_number, input_iteration, time, level, total_mass))
+        f.write("#  ye_bin          ye_bin_mass           ye_bin_mass/total_mass\n") 
+        for i in range(len(ye_bin)):  
+            f.write("{}  {}       {}      {}\n".format(round(ye_bin[i], 2), round(ye_bin[i]+delta_ye_bin, 2), ye_bin_mass[i], ye_bin_mass[i]/total_mass))
+        f.close()  
+             
         end = timer()
         time_elapsed = end - start
         print("Time elapsed = {} seconds = {} minutes".format(round(time_elapsed), round(time_elapsed/60.0)))
@@ -614,28 +399,8 @@ for output_number in range(80, 106):
         print("---------------------------------------------------------------\n")
         sys.stdout.flush()
         
-        f.write("{}  {}  {}  {}     {}     {}     {}     {}     {}\n".format(output_number, input_iteration, time, level, ejecta_mass, ejecta_KE, ejecta_IE, ejecta_ME, ejecta_TE))
-        
-        #----------------------------------------------------------------------------
-        #------------------------ Plot a given array --------------------------------
-        #----------------------------------------------------------------------------
-        variable_3d = unbound_flag
-        gf = "unbound_flag"       
-        norm = "linear"
-        vmin_set = None
-        vmax_set = None
-        x_slice = 0.0
-        y_slice = 0.0
-        colormap = "Greys"
-        xmin = None
-        xmax = None 
-        ymin = None
-        ymax = None
-        M_to_km = 1.477 #1.0
-         
-        plot_data(selected_iteration, time, x0, y0, z0, dx, dy, dz, variable_3d, gf, vmin_set, vmax_set, norm, level, x_slice, y_slice, colormap, xmin, xmax, ymin, ymax, M_to_km)
         #----------------------------------------------------------------------------
 
-f.close()        
+      
         
         

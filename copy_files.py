@@ -32,13 +32,17 @@ def execute_copy(var_name):
     latest_copied_output = 0
     if(len(out_list) > 0):
         latest_copied_output = max(out_list)
-    
+   
+    #latest_copied_output = 106
     print("latest copied output number = {}".format(latest_copied_output))
     file1.close()
     os.system("rm temp2.txt")
 
     start_out = latest_copied_output
     end_out = current_output
+
+    #if var_name == "grhydrox-magnetization" or var_name == "grhydrox-plasma_beta":
+    #    start_out = 59
 
     for i in range(start_out, end_out+1):
         cp_source = "{}/output-{}/{}/norms/{}.tsv".format(sim_path, str(i).zfill(4), parfile_name, var_name)
@@ -48,7 +52,7 @@ def execute_copy(var_name):
         os.system(cp_command)
 #-----------------------------------------------------------------------------------------------------------------------
 
-var_names = ["hydrobase-rho", "admbase-lapse", "hydrobase-entropy", "hydrobase-temperature", "z4c-allc", "hydrobase-bvec", "neutrinoleakage-neutrinoleakage_abs"]
+var_names = ["hydrobase-rho", "admbase-lapse", "hydrobase-entropy", "hydrobase-temperature", "z4c-allc", "hydrobase-bvec", "neutrinoleakage-neutrinoleakage_abs", "grhydrox-magnetization", "grhydrox-plasma_beta"]
 
 for var_name in var_names:
     execute_copy(var_name)

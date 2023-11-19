@@ -19,17 +19,6 @@ hydro_vars = ["1:iteration", "2:time", "3:hydrobase::rho.min", "4:hydrobase::rho
 #------------------------------------------------------------------------------ 
 #Determine the latest output number that is already present in out_path (files before that will not be copied)
 var_name = "hydrobase-rho"
-os.system("ls norms/ | grep {} > temp2.txt".format(var_name))
-file1 = open('temp2.txt', 'r')
-Lines = file1.readlines()
-out_list = []
-for line in Lines:
-    tempvar = int(line.strip().split('-')[3].split('.')[0])
-    out_list.append(tempvar)
-
-latest_copied_output = 0
-if(len(out_list) > 0):
-    latest_copied_output = max(out_list)
 #------------------------------------------------------------------------------   
 plt.clf()
 
@@ -62,8 +51,8 @@ ring_marker_size = 40
 dot_marker_size = 20
 
 style = False #Always start with false so that dot is plotted first, especially when separate_chkpts=False
-for output_number in range(0, latest_copied_output+1):     
-    file_name = "norms/{}-output-{}.tsv".format(var_name, str(output_number).zfill(4))
+for output_number in range(2, 12):     
+    file_name = "temp{}/{}.tsv".format(output_number, var_name)
     data = pd.read_csv(file_name, sep='\t', names=hydro_vars, comment="#");
     if style:  
         plt.scatter(data["2:time"]/time_factor-offset, data["4:hydrobase::rho.max"], s=ring_marker_size, marker="o", facecolors='none', edgecolors='b')

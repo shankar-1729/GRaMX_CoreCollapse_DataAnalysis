@@ -1,15 +1,15 @@
 import os
 
 #global variables
-out_path = "/gpfs/alpine/ast154/scratch/sshanka/carpetx_github/CCSN_12000km_analysis/scalars" 
+out_path = "/gpfs/alpine/ast154/scratch/sshanka/carpetx_github/CCSN_12000km_analysis/norms" 
 parfile_name = "CCSN_12000km"
 sim_path = "/gpfs/alpine/ast154/scratch/sshanka/simulations/CCSN_12000km" 
 
-from termcolor import colored, cprint
+#from termcolor import colored, cprint
 #-----------------------------------------------------------------------------------------------------------------
 def execute_copy(var_name):
-    colortext = colored("Copying files for variable {}...".format(var_name), "green")
-    print(colortext)
+    #colortext = colored("Copying files for variable {}...".format(var_name), "green")
+    #print(colortext)
 
     #Determine the currently active output number
     os.system("ls {} | grep active > temp1.txt".format(sim_path))
@@ -33,7 +33,6 @@ def execute_copy(var_name):
     if(len(out_list) > 0):
         latest_copied_output = max(out_list)
     
-    #latest_copied_output = 106
     print("latest copied output number = {}".format(latest_copied_output))
     file1.close()
     os.system("rm temp2.txt")
@@ -41,35 +40,18 @@ def execute_copy(var_name):
     start_out = latest_copied_output
     end_out = current_output
 
+    if var_name == "grhydrox-magnetization" or var_name == "grhydrox-plasma_beta":
+        start_out = 59
+
     for i in range(start_out, end_out+1):
-        cp_source = "{}/output-{}/{}/".format(sim_path, str(i).zfill(4), parfile_name)
-        print("Copying scalars from {}...".format(cp_source))
-        os.system("ls {} | grep {}.it > temp3.txt".format(cp_source, var_name))
-        
-        output_file = open("scalars/{}-output-{}.tsv".format(var_name, str(i).zfill(4)), "w")
-        
-        header_flag = 0
-        file3 = open('temp3.txt', 'r')
-        Lines = file3.readlines()
-        for line in Lines:
-            #print(line)
-            file4 = cp_source + line.strip()
-            #print(file4)
-            with open(file4, 'r') as fp:
-                if header_flag == 0:
-                    output_file.write(fp.readlines()[0])
-
-            with open(file4, 'r') as fp:
-                output_file.write(fp.readlines()[1])
-                header_flag = header_flag + 1
-                #print(x)
-
-        file3.close()
-        os.system("rm temp3.txt")
-        output_file.close()
+        cp_source = "{}/output-{}/{}/norms/{}.tsv".format(sim_path, str(i).zfill(4), parfile_name, var_name)
+        cp_dest = "{}/{}-output-{}.tsv".format(out_path, var_name, str(i).zfill(4))
+        cp_command = "cp {} {}".format(cp_source, cp_dest)
+        print(cp_command)
+        os.system(cp_command)
 #-----------------------------------------------------------------------------------------------------------------------
 
-var_names = ["shocktracker-max_shock_radius", "shocktracker-max_shock_radius_x", "shocktracker-max_shock_radius_y", "shocktracker-max_shock_radius_z"]
+var_names = ["hydrobase-rho", "admbase-lapse", "hydrobase-entropy", "hydrobase-temperature", "z4c-allc", "hydrobase-bvec", "neutrinoleakage-neutrinoleakage_abs", "grhydrox-magnetization", "grhydrox-plasma_beta"]
 
 for var_name in var_names:
     execute_copy(var_name)
