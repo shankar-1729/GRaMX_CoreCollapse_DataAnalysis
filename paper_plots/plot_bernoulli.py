@@ -47,7 +47,7 @@ def get_iteration_number_list(data_dir):
         
 def get_data_xz(group, gf, x_slice, data_dir, input_iteration, level):
     print(" ")
-    print("group = {}, gf = {}".format(group, gf))
+    print("group = {}, gf = {}".format(group, gf), flush=True)
 
     basename = None
     for f in os.listdir(data_dir):
@@ -72,7 +72,7 @@ def get_data_xz(group, gf, x_slice, data_dir, input_iteration, level):
     print("itr: {}\n".format(itr))
 
     time = (itr.time - 71928)/203.0
-    print("time = {}".format(time))
+    print("time = {}".format(time), flush=True)
     
 
     #load mesh "hydrobase_entropy_lev01" (record)
@@ -259,7 +259,7 @@ def get_plasma_beta_xz(x_slice, data_dir, input_iteration, level):
     
     #bernoulli calculation
     ut = w*(velxlow*betax_2d_yz_ccc + velylow*betay_2d_yz_ccc + velzlow*betaz_2d_yz_ccc - alp_2d_yz_ccc) 
-    bernoulli = - (1.0 + eps_2d_yz + (press_2d_yz + b2) / rho_2d_yz) * ut   #bernoulli = -h*ut
+    bernoulli = - (1.0 + abs(eps_2d_yz) + (press_2d_yz + b2) / rho_2d_yz) * ut   #bernoulli = -h*ut
     unbound_flag = np.zeros((gxx_2d_yz.shape[0]-1, gxx_2d_yz.shape[1]-1))
     unbound_flag[bernoulli > 1.0] = 1.0
     plasma_beta = unbound_flag   #TODO TODO TODO: Remove this later on. Temporary placeholder. 
@@ -359,7 +359,7 @@ def plot_data_xz(selected_iteration, time, y0, z0, dy, dz, variable_2d_yz, gf, v
 
 def get_data_yz(group, gf, x_slice, data_dir, input_iteration, level):
     print(" ")
-    print("group = {}, gf = {}".format(group, gf))
+    print("group = {}, gf = {}".format(group, gf), flush=True)
 
     basename = None
     for f in os.listdir(data_dir):
@@ -384,7 +384,7 @@ def get_data_yz(group, gf, x_slice, data_dir, input_iteration, level):
     print("itr: {}\n".format(itr))
 
     time = (itr.time - 71928)/203.0
-    print("time = {}".format(time))
+    print("time = {}".format(time), flush=True)
 
     #load mesh "hydrobase_entropy_lev01" (record)
     variable_mesh = itr.meshes["{}_lev{}".format(group, str(level).zfill(2))]
@@ -570,7 +570,7 @@ def get_plasma_beta_yz(x_slice, data_dir, input_iteration, level):
     
     #bernoulli calculation
     ut = w*(velxlow*betax_2d_yz_ccc + velylow*betay_2d_yz_ccc + velzlow*betaz_2d_yz_ccc - alp_2d_yz_ccc) 
-    bernoulli = - (1.0 + eps_2d_yz + (press_2d_yz + b2) / rho_2d_yz) * ut   #bernoulli = -h*ut
+    bernoulli = - (1.0 + abs(eps_2d_yz) + (press_2d_yz + b2) / rho_2d_yz) * ut   #bernoulli = -h*ut
     unbound_flag = np.zeros((gzz_2d_yz.shape[0]-1, gzz_2d_yz.shape[1]-1))
     unbound_flag[bernoulli > 1.0] = 1.0
     plasma_beta = unbound_flag   #TODO TODO TODO: Remove this later on. Temporary placeholder. 
@@ -1018,7 +1018,7 @@ def plot_xy(data_dir, input_iteration, groups, gfs, norms, vmins, vmaxs, level, 
                
 
 #for output_number in range(106, 107):
-for output_number in range(100, 101):   #54 is the last for "Ref6_40"
+for output_number in range(90, 91):   #54 is the last for "Ref6_40"
     sim_name = "CCSN_12000km"   
     #sim_name = "Ref6_40"
     parfile_name = "CCSN_12000km"
@@ -1032,11 +1032,11 @@ for output_number in range(100, 101):   #54 is the last for "Ref6_40"
     M_to_km = 1.477  #1.0
    
     iteration_numbers = get_iteration_number_list(data_dir)
-    print(iteration_numbers)
+    print(iteration_numbers, flush=True)
 
     for input_iteration in iteration_numbers:
         
-        level = 6  #which refinement level to load
+        level = 5  #which refinement level to load
    
         '''
         groups = ["plasma_beta"]

@@ -221,36 +221,13 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
     gyz_3d_ccc = np.zeros((gyz_3d.shape[0]-1, gyz_3d.shape[1]-1, gyz_3d.shape[2]-1))
     gzz_3d_ccc = np.zeros((gzz_3d.shape[0]-1, gzz_3d.shape[1]-1, gzz_3d.shape[2]-1))
     
-    '''
-    #This loops takes the majority of processing time
-    for i in range(gxx_3d.shape[0]-1):
-      for j in range(gxx_3d.shape[1]-1):
-        for k in range(gxx_3d.shape[2]-1):
-          gxx_3d_ccc[i, j, k] = 0.125*(gxx_3d[i, j, k] + gxx_3d[i, j+1, k] + \
-                                       gxx_3d[i, j, k+1] + gxx_3d[i, j+1, k+1] + \
-                                       gxx_3d[i+1, j, k] + gxx_3d[i+1, j+1, k] + \
-                                       gxx_3d[i+1, j, k+1] + gxx_3d[i+1, j+1, k+1])
-          gxy_3d_ccc[i, j, k] = 0.125*(gxy_3d[i, j, k] + gxy_3d[i, j+1, k] + \
-                                       gxy_3d[i, j, k+1] + gxy_3d[i, j+1, k+1] + \
-                                       gxy_3d[i+1, j, k] + gxy_3d[i+1, j+1, k] + \
-                                       gxy_3d[i+1, j, k+1] + gxy_3d[i+1, j+1, k+1])
-          gxz_3d_ccc[i, j, k] = 0.125*(gxz_3d[i, j, k] + gxz_3d[i, j+1, k] + \
-                                       gxz_3d[i, j, k+1] + gxz_3d[i, j+1, k+1] + \
-                                       gxz_3d[i+1, j, k] + gxz_3d[i+1, j+1, k] + \
-                                       gxz_3d[i+1, j, k+1] + gxz_3d[i+1, j+1, k+1])
-          gyy_3d_ccc[i, j, k] = 0.125*(gyy_3d[i, j, k] + gyy_3d[i, j+1, k] + \
-                                       gyy_3d[i, j, k+1] + gyy_3d[i, j+1, k+1] + \
-                                       gyy_3d[i+1, j, k] + gyy_3d[i+1, j+1, k] + \
-                                       gyy_3d[i+1, j, k+1] + gyy_3d[i+1, j+1, k+1])
-          gyz_3d_ccc[i, j, k] = 0.125*(gyz_3d[i, j, k] + gyz_3d[i, j+1, k] + \
-                                       gyz_3d[i, j, k+1] + gyz_3d[i, j+1, k+1] + \
-                                       gyz_3d[i+1, j, k] + gyz_3d[i+1, j+1, k] + \
-                                       gyz_3d[i+1, j, k+1] + gyz_3d[i+1, j+1, k+1])
-          gzz_3d_ccc[i, j, k] = 0.125*(gzz_3d[i, j, k] + gzz_3d[i, j+1, k] + \
-                                       gzz_3d[i, j, k+1] + gzz_3d[i, j+1, k+1] + \
-                                       gzz_3d[i+1, j, k] + gzz_3d[i+1, j+1, k] + \
-                                       gzz_3d[i+1, j, k+1] + gzz_3d[i+1, j+1, k+1])
-    '''
+    gxx_3d_ccc = gxx_3d[:-1, :-1, :-1].copy()                                  
+    gxy_3d_ccc = gxy_3d[:-1, :-1, :-1].copy()                                    
+    gxz_3d_ccc = gxz_3d[:-1, :-1, :-1].copy()                                 
+    gyy_3d_ccc = gyy_3d[:-1, :-1, :-1].copy() 
+    gyz_3d_ccc = gyz_3d[:-1, :-1, :-1].copy() 
+    gzz_3d_ccc = gzz_3d[:-1, :-1, :-1].copy()
+   
     
     rad_cutoff_50km = np.zeros((gzz_3d.shape[0]-1, gzz_3d.shape[1]-1, gzz_3d.shape[2]-1)) 
     rad_cutoff_70km = np.zeros((gzz_3d.shape[0]-1, gzz_3d.shape[1]-1, gzz_3d.shape[2]-1))  
@@ -262,7 +239,7 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
     #print("Calculating total mass within radius = 50.0 km = {} M".format(mass_within_50km_M))
     
     #Don't average for now (until I figure out parallelization)
-    print("Started metric calculation...", flush=True)
+    print("Started rad_cutoff calculation...", flush=True)
     for i in range(gxx_3d.shape[0]-1): #z
       for j in range(gxx_3d.shape[1]-1): #y
         for k in range(gxx_3d.shape[2]-1): #x
@@ -277,12 +254,6 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
           if rad <= mass_within_90km_M: 
             rad_cutoff_90km[i, j, k] = 1.0  
           
-          gxx_3d_ccc[i, j, k] = gxx_3d[i, j, k]                                      
-          gxy_3d_ccc[i, j, k] = gxy_3d[i, j, k]                                      
-          gxz_3d_ccc[i, j, k] = gxz_3d[i, j, k]                                     
-          gyy_3d_ccc[i, j, k] = gyy_3d[i, j, k] 
-          gyz_3d_ccc[i, j, k] = gyz_3d[i, j, k] 
-          gzz_3d_ccc[i, j, k] = gzz_3d[i, j, k]
               
     #-------------------------------------------------------------------------------------------------
     #Calculate variables
@@ -319,21 +290,43 @@ Ref6_40: output-0000 to output-0055 (except output-0043)
 '''
 #------------------------------------------------------------------               
 
-sim_name = "CCSN_12000km"   #TODO
-#sim_name = "Ref6_40"       #TODO
+#TODO
+#sim_name = "CCSN_12000km"   
+#sim_name = "Ref6_40"
+sim_name = "Ref6_40_AST191"
 
 #"buffering=1" means flush output after every line
-f = open("accretion_rate/accretion_rate_{}.txt".format(sim_name), "w", buffering=1) 
+f = open("accretion_rate/accretion_rate_{}_try4.txt".format(sim_name), "w", buffering=1) 
 #f = open("accretion_rate/test.txt".format(sim_name), "w", buffering=1) 
 f.write("#o/p  it       t_pb[ms]       level        mass_50km[M]        mass_70km[M]    mass_90km[M]\n") 
 
 
-for output_number in range(0, 107): #TODO     
+for output_number in range(103, 104): #TODO     
     parfile_name = "CCSN_12000km"
     verbose = False
     
-    #data_dir = "/gpfs/alpine/ast154/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
-    data_dir = "/lustre/orion/ast154/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
+    data_dir = "/lustre/orion/ast191/scratch/sshanka/simulations/Ref6_40/output-{}/{}/".format(str(output_number).zfill(4), parfile_name)
+    #data_dir = "/lustre/orion/ast154/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
+    
+    #--------------------------------------------------------------------------------
+    print("-------------------------------------------------------------------------")    
+    #Does directory exist
+    directory_exists = os.path.exists(data_dir)
+    if(not directory_exists):
+        print("Directory {} doesn't exist".format(data_dir))    
+        continue
+    
+    #Does file exist
+    file_exists = False
+    for fname in os.listdir(data_dir):
+        if fname.endswith('.bp4'):
+            print("Found file output-{}/{}".format(str(output_number).zfill(4), fname))
+            file_exists = True
+    print("output-{}: file exists = {}".format(str(output_number).zfill(4), file_exists))
+    #--------------------------------------------------------------------------------
+    
+    if(not file_exists):
+        continue
     
     if output_number == 43 and sim_name == "Ref6_40":
         continue
@@ -344,14 +337,14 @@ for output_number in range(0, 107): #TODO
     #TODO: Try to use multithreading
     for input_iteration in iteration_numbers:
         
-        if input_iteration != iteration_numbers[0]:
-            continue         
+        #if input_iteration != iteration_numbers[0]:
+        #    continue         
         
         #----------------------------------------------------------------------------
         start = timer()
         
         level = -1
-        if sim_name == "Ref6_40":
+        if sim_name == "Ref6_40" or sim_name == "Ref6_40_AST191":
             level = 5
         if sim_name == "CCSN_12000km":
             level = 6    

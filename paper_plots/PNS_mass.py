@@ -401,19 +401,42 @@ Ref6_40: output-0000 to output-0055 (except output-0043)
 '''
 #------------------------------------------------------------------               
 
+#TODO
 #sim_name = "CCSN_12000km"   
-sim_name = "Ref6_40"
-#f = open("PNS_mass/PNS_mass_{}.txt".format(sim_name), "w", buffering=1) #means flush output after every line
-f = open("PNS_mass/test.txt".format(sim_name), "w", buffering=1) #TODO 
+#sim_name = "Ref6_40"
+sim_name = "Ref6_40_AST191"
+
+f = open("PNS_mass/PNS_mass_{}_try4.txt".format(sim_name), "w", buffering=1) #means flush output after every line
+#f = open("PNS_mass/test.txt".format(sim_name), "w", buffering=1) #TODO 
 f.write("#o/p  it       t_pb[ms]       level        PNS_mass[M]        PNS_radius[km]\n")
 
 
-for output_number in range(0, 56):      
+for output_number in range(87, 104):      
     parfile_name = "CCSN_12000km"
     verbose = False
     
-    #data_dir = "/gpfs/alpine/ast154/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
-    data_dir = "/lustre/orion/ast154/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
+    data_dir = "/lustre/orion/ast191/scratch/sshanka/simulations/Ref6_40/output-{}/{}/".format(str(output_number).zfill(4), parfile_name)
+    #data_dir = "/lustre/orion/ast154/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
+    
+    #--------------------------------------------------------------------------------
+    print("-------------------------------------------------------------------------")    
+    #Does directory exist
+    directory_exists = os.path.exists(data_dir)
+    if(not directory_exists):
+        print("Directory {} doesn't exist".format(data_dir))    
+        continue
+    
+    #Does file exist
+    file_exists = False
+    for fname in os.listdir(data_dir):
+        if fname.endswith('.bp4'):
+            print("Found file output-{}/{}".format(str(output_number).zfill(4), fname))
+            file_exists = True
+    print("output-{}: file exists = {}".format(str(output_number).zfill(4), file_exists))
+    #--------------------------------------------------------------------------------
+    
+    if(not file_exists):
+        continue
     
     if output_number == 43 and sim_name == "Ref6_40":
         continue
@@ -429,7 +452,13 @@ for output_number in range(0, 56):
         
         #----------------------------------------------------------------------------
         start = timer()
-        level = 5  #which refinement level to load
+       
+        level = -1
+        if sim_name == "Ref6_40" or sim_name == "Ref6_40_AST191":
+            level = 5
+        if sim_name == "CCSN_12000km":
+            level = 6    
+                   
         selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, dens, mass_within_radius_km = \
             get_derived_vars_3d(data_dir, input_iteration, level, verbose)
         

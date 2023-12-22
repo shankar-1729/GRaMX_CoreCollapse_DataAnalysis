@@ -403,13 +403,14 @@ Ref6_40: output-0000 to output-0055 (except output-0043)
 
 
 #for output_number in range(106, 107):
-for output_number in range(50, 51):   
+for output_number in range(103, 104):   
     #sim_name = "CCSN_12000km"   
     sim_name = "Ref6_40"
     
     parfile_name = "CCSN_12000km"
     
-    data_dir = "/lustre/orion/ast154/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
+    #data_dir = "/lustre/orion/ast154/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
+    data_dir = "/lustre/orion/ast191/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
     
     if output_number == 43 and sim_name == "Ref6_40":
         continue

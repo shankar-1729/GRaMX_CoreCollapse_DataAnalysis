@@ -339,11 +339,12 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
     b2 = (bvecx_3d * bvecxlow + bvecy_3d * bvecylow + bvecz_3d * bveczlow) / (w*w) + Bdotv*Bdotv;
     
     ut = w*(velxlow*betax_3d_ccc + velylow*betay_3d_ccc + velzlow*betaz_3d_ccc - alp_3d_ccc) 
-    bernoulli = - (1.0 + eps_3d + (press_3d + b2) / rho_3d) * ut   #bernoulli = -h*ut
+    enthalpy_h = 1.0 + eps_3d + (press_3d + b2) / rho_3d
+    bernoulli = - enthalpy_h* ut   #bernoulli = -h*ut
     
     print("Started unbound calculation...", flush=True)
     unbound_flag = np.zeros((rho_3d.shape[0], rho_3d.shape[1], rho_3d.shape[2]))
-    #We use vectorized processing rather than using for loop: speedup is tremendous
+    #We use vectorized processing rather than using 'for' loop: speedup is tremendous
     unbound_flag[bernoulli > 1.0] = 1.0
     
     '''
@@ -356,18 +357,37 @@ def get_derived_vars_3d(data_dir, input_iteration, level, verbose):
                 unbound_flag[i, j, k] = 1.0                  
     '''
     
-    del press_3d, bernoulli, ut, bvecxlow, bvecylow, bveczlow, velxlow, velylow, velzlow, betax_3d_ccc, betay_3d_ccc, betaz_3d_ccc, alp_3d_ccc
+    del bernoulli, ut, bvecxlow, bvecylow, bveczlow, velxlow, velylow, velzlow, betax_3d_ccc, betay_3d_ccc, betaz_3d_ccc
     
     #mass = (rho*wlorentz)*(sdetg*dx*dy*dz)
     #KE = 0.5*(rho*wlorentz)*(v^2)*(sdetg*dx*dy*dz)
     #IE = eps*(rho*wlorentz)*(sdetg*dx*dy*dz)
     #ME = (0.5*bcom_sq)*(sdetg*dx*dy*dz)            
     unbound_dens = sdetg*w*rho_3d*unbound_flag
-    unbound_KE = 0.5*sdetg*w*rho_3d*v2*unbound_flag 
-    unbound_IE = eps_3d*sdetg*w*rho_3d*unbound_flag
+    #unbound_KE = 0.5*sdetg*w*rho_3d*v2*unbound_flag #TODO TODO
+    unbound_KE = sdetg*(w-1)*rho_3d*unbound_flag 
+    unbound_IE = abs(eps_3d)*sdetg*w*rho_3d*unbound_flag  
     unbound_ME = 0.5*b2*sdetg*unbound_flag
     
-    return selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, unbound_dens, unbound_KE, unbound_IE, unbound_ME
+    #TODO: Look at eq 24 of: https://arxiv.org/pdf/2311.04989.pdf
+    
+    #-------------------------------------------------------------------------------
+    #calculate energy using kuroda2023 method
+    kuroda_unbound_flag = np.zeros((rho_3d.shape[0], rho_3d.shape[1], rho_3d.shape[2]))
+    
+    #Muller2012: https://iopscience.iop.org/article/10.1088/0004-637X/756/1/84/pdf (see eq 2)
+    #e_bind = alp_3d_ccc*(rho_3d*enthalpy_h*w*w - (press_3d + 0.5*b2)) - rho_3d*w 
+    
+    #Kuroda2023: https://arxiv.org/pdf/2309.05161.pdf (see eq 4 and 5)
+    #definition of tau is not clear, so I will use same definition as cons.tau
+    tau = rho_3d*enthalpy_h*w*w - (press_3d + 0.5*b2) - w*Bdotv*w*Bdotv 
+    e_bind = alp_3d_ccc*tau - rho_3d*w 
+    
+    kuroda_unbound_flag[e_bind > 0.0] = 1.0
+    kuroda_explosion_energy = e_bind*sdetg*kuroda_unbound_flag
+    #-------------------------------------------------------------------------------
+    
+    return selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, unbound_dens, unbound_KE, unbound_IE, unbound_ME, kuroda_explosion_energy
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////        
 
 from timeit import default_timer as timer        
@@ -384,20 +404,44 @@ Ref6_40: output-0000 to output-0055 (except output-0043)
 #TODO
 sim_name = "CCSN_12000km"   
 #sim_name = "Ref6_40"
+#sim_name = "Ref6_40_AST191"
+
+import os 
 
 #buffering=1 #means flush output after every line
 #TODO
-#f = open("ejecta_mass_energy/ejecta_mass_energy_{}_try2.txt".format(sim_name), "w", buffering=1) 
+#f = open("ejecta_mass_energy/ejecta_mass_energy_abs_eps_{}.txt".format(sim_name), "w", buffering=1) 
 f = open("ejecta_mass_energy/test.txt".format(sim_name), "w", buffering=1) 
-f.write("#o/p  it       t_pb[ms]       level        ejecta_mass[M]      ejecta_KE[erg]     ejecta_IE[erg]     ejecta_ME[erg]     ejecta_TE[erg]\n")
+f.write("#o/p  it       t_pb[ms]       level        ejecta_mass[M]      ejecta_KE[erg]     ejecta_IE[erg]     ejecta_ME[erg]     ejecta_TE[erg]   exp_energy_kuroda[erg]\n")
 
 #TODO
-for output_number in range(105, 106):      
+for output_number in range(90, 91):      
     parfile_name = "CCSN_12000km"
     verbose = False
     
-    #data_dir = "/gpfs/alpine/ast154/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
+    #TODO TODO
+    #data_dir = "/lustre/orion/ast191/scratch/sshanka/simulations/Ref6_40/output-{}/{}/".format(str(output_number).zfill(4), parfile_name)
     data_dir = "/lustre/orion/ast154/scratch/sshanka/simulations/{}/output-{}/{}/".format(sim_name, str(output_number).zfill(4), parfile_name)
+    
+    #--------------------------------------------------------------------------------
+    print("-------------------------------------------------------------------------")    
+    #Does directory exist
+    directory_exists = os.path.exists(data_dir)
+    if(not directory_exists):
+        print("Directory {} doesn't exist".format(data_dir))    
+        continue
+    
+    #Does file exist
+    file_exists = False
+    for fname in os.listdir(data_dir):
+        if fname.endswith('.bp4'):
+            print("Found file output-{}/{}".format(str(output_number).zfill(4), fname))
+            file_exists = True
+    print("output-{}: file exists = {}".format(str(output_number).zfill(4), file_exists))
+    #--------------------------------------------------------------------------------
+    
+    if(not file_exists):
+        continue
     
     if output_number == 43 and sim_name == "Ref6_40":
         continue
@@ -415,26 +459,28 @@ for output_number in range(105, 106):
         start = timer()
         
         level = -1
-        if sim_name == "Ref6_40":
+        if sim_name == "Ref6_40" or sim_name == "Ref6_40_AST191":
             level = 5
         if sim_name == "CCSN_12000km":
-            level = 6    
+            level = 6      
         
         selected_iteration, time, x0, y0, z0, dx, dy, dz, w, sdetg, \
-        unbound_dens, unbound_KE, unbound_IE, unbound_ME = \
+        unbound_dens, unbound_KE, unbound_IE, unbound_ME, kuroda_explosion_energy = \
                  get_derived_vars_3d(data_dir, input_iteration, level, verbose)
         
         ejecta_mass = dx*dy*dz*np.sum(unbound_dens)  
         ejecta_KE = dx*dy*dz*np.sum(unbound_KE)*1.7877e54 
         ejecta_IE = dx*dy*dz*np.sum(unbound_IE)*1.7877e54  
         ejecta_ME = dx*dy*dz*np.sum(unbound_ME)*1.7877e54 
-        ejecta_TE =  ejecta_KE + ejecta_IE + 4*3.14159265*ejecta_ME 
+        ejecta_TE =  ejecta_KE + ejecta_IE + ejecta_ME 
+        kuroda_total_energy = dx*dy*dz*np.sum(kuroda_explosion_energy)*1.7877e54 
         
         print("At level {}: ejecta mass = {} M_sun".format(level, ejecta_mass));
         print("At level {}: ejecta Kinetic Energy = {} erg".format(level, ejecta_KE));
         print("At level {}: ejecta Internal Energy = {} erg".format(level, ejecta_IE));
         print("At level {}: ejecta Magnetic Energy = {} erg".format(level, ejecta_ME));
         print("At level {}: ejecta Total Energy = {} erg".format(level, ejecta_TE));
+        print("At level {}: kuroda explosion Energy = {} erg".format(level, kuroda_total_energy));
         
         end = timer()
         time_elapsed = end - start
@@ -444,7 +490,7 @@ for output_number in range(105, 106):
         print("---------------------------------------------------------------\n")
         sys.stdout.flush()
         
-        f.write("{}  {}  {}  {}     {}     {}     {}     {}     {}\n".format(output_number, input_iteration, time, level, ejecta_mass, ejecta_KE, ejecta_IE, ejecta_ME, ejecta_TE))
+        f.write("{}  {}  {}  {}     {}     {}     {}     {}     {}     {}\n".format(output_number, input_iteration, time, level, ejecta_mass, ejecta_KE, ejecta_IE, ejecta_ME, ejecta_TE, kuroda_total_energy))
         #----------------------------------------------------------------------------
 
 f.close()        
